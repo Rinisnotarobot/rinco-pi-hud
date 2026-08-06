@@ -1,0 +1,18 @@
+This package is a personal derivative of pi-sakura-cyberdeck by beautifulrem.
+Original project: https://github.com/beautifulrem/pi-sakura-cyberdeck
+License: MIT.
+
+This package contains a dynamic HUD footer for Pi, adapted from the Footer
+portion of pi-zentui by Luka: https://github.com/lmilojevicc/pi-zentui
+License: MIT.
+
+Session, model, activity, MCP, configuration-count, and Codex subscription
+status capabilities are adapted from pi-shannon-statusline by RealAlexandreAI:
+https://github.com/RealAlexandreAI/pi-shannon-statusline
+License: MIT. The integrated presentation has been rewritten for the HUD footer;
+Shannon's HUD, Matrix animation, independent Footer, and Monokai palette are
+not included.
+
+The Codex usage client included under extensions/hud/telemetry/codex-usage
+derives from pi-codex-usage by narumiruna and is MIT licensed. Its full license
+text is kept at extensions/hud/telemetry/codex-usage/LICENSE.
