@@ -148,5 +148,5 @@ export function formatSkillCounts(counts: SkillCounts): string {
 	if (counts.total <= 0) return "";
 	const total = Math.max(0, Math.trunc(counts.total));
 	const active = Math.min(total, Math.max(0, Math.trunc(counts.active)));
-	return `★ ${active}/${total}`;
+	return `Skill ${active}/${total}`;
 }

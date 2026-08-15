@@ -12,7 +12,7 @@
 
 </div>
 
-Rinco Pi HUD 为 Pi TUI 会话提供丰富的实时状态脚注，可显示项目状态、Git 指标、运行时版本、会话活动、模型用量、Token 费用等信息，支持可配置的三行或单行布局。Pi 可直接加载 TypeScript 扩展，无需构建步骤（`tsconfig.json` 设置了 `noEmit: true`，仅用于 `npm run typecheck` 类型检查）。
+Rinco Pi HUD 为 Pi TUI 会话提供丰富的实时状态脚注，可显示项目状态、Git 指标、运行时版本、会话活动、模型用量、Token 费用等信息，支持响应式四分组布局或可定制的单行布局。Pi 可直接加载 TypeScript 扩展，无需构建步骤（`tsconfig.json` 设置了 `noEmit: true`，仅用于 `npm run typecheck` 类型检查）。
 
 ## 功能
 
@@ -22,7 +22,7 @@ Rinco Pi HUD 为 Pi TUI 会话提供丰富的实时状态脚注，可显示项�
 - **Model quota**：根据当前模型自动切换 Codex 周限额或 Token Switch 余额。
 - **Git awareness**：分支、Detached HEAD、Tag、Ahead/Behind、Stash、合并冲突和脏状态。
 - **Runtime detection**：支持 Node、Python、Go、Rust、Java 等 60+ 运行时，并解析项目清单版本。
-- **Configurable layout**：默认三行分类布局，或完全自定义的单行模板。
+- **Configurable layout**：默认使用响应式 Project、Session、Activity、Usage 四分组布局，或完全自定义的单行模板。
 - **Extension statuses**：读取第三方扩展发布的状态，按配置的位置和颜色模式显示。
 - **Safe fallback**：超时和错误处理优雅，会话关闭后不留过期数据。
 
@@ -99,7 +99,7 @@ HUD 脚注默认启用。运行 `/zentui` 打开交互式设置。
 
 ### 布局
 
-默认三行布局将项目、会话和用量信息分组显示。设置 `footerFormat` 模板字符串可切换为单行布局：
+默认布局将信息分为 Project、Session、Activity 和 Usage 四组；超长分组会在完整状态项边界处换行，并保持续行对齐。设置 `footerFormat` 模板字符串可切换为单行布局：
 
 ```text
 /zentui format "$cwd( $git_branch)$fill($context)( $tokens)( $cost)"

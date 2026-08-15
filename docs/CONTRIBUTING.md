@@ -48,7 +48,8 @@ Tests live in `tests/`:
 
 - `zentui-status.test.ts` — Config counts, MCP status parsing, and extension status helpers.
 - `codex-usage.test.ts` — Codex payload normalization and model-specific quota formatting.
-- `footer-layout.test.ts` — Categorized three-line layout and narrow-width budget.
+- `footer-layout.test.ts` — Four-group categorized layout, segment wrapping, and narrow-width budget.
+- `footer-groups.test.ts` — Semantic Project, Session, Activity, and Usage segment ordering.
 - `model-switch-statusline.test.ts` — Model switch statusline integration.
 - `model-usage-refresh.test.ts` — Model usage refresh integration.
 - `token-switch-usage.test.ts` — Token Switch balance formatting.
@@ -78,10 +79,13 @@ Do not add ignore rules, skip tests, or weaken types merely to bypass a check.
 
 The HUD extension is organized into functional modules under `extensions/hud/`:
 
-- **`index.ts`** — Lifecycle and side-effect orchestration.
+- **`index.ts`** — Composition root for controllers, shared state, and UI installation.
+- **`commands/`** — `/zentui` presentation and its configuration-persistence controller.
 - **`config/`** — Configuration model, normalization, and persistence.
-- **`footer/`** — Footer rendering, categorized layout, and template parsing.
+- **`footer/`** — Footer rendering, semantic group construction, responsive layout, and templates.
 - **`segments/`** — State collectors: Git, runtime, MCP, skills, projects, etc.
+- **`session/`** — Pi event registration, lifecycle generations, and live-context throttling.
+- **`state/`** — Shared footer state, telemetry reducer, and project-refresh controller.
 - **`telemetry/`** — Usage formatting, token switch, and Codex subscription client.
 - **`session/`** — Session lifecycle, context, and live context overlay.
 - **`state/`** — Aggregated state, telemetry, and project refresh.

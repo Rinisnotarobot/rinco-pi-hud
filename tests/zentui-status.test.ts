@@ -222,7 +222,7 @@ test("skill activity tracks distinct available and activated skills", () => {
 		true,
 	);
 	assert.deepEqual(tracker.counts(), { total: 2, active: 2 });
-	assert.equal(formatSkillCounts(tracker.counts()!), "★ 2/2");
+	assert.equal(formatSkillCounts(tracker.counts()!), "Skill 2/2");
 	assert.equal(formatSkillCounts({ total: 0, active: 0 }), "");
 });
 

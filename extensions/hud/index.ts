@@ -1,51 +1,17 @@
 import type { ExtensionAPI, ExtensionContext, Skill } from "@earendil-works/pi-coding-agent";
 import registerCodexUsage from "./telemetry/codex-usage/index.js";
-import { countConfigEntries } from "./config/config-counts.js";
-import {
-	type ColorSourcesConfig,
-	type ContextStyle,
-	type ExtensionStatusColorMode,
-	type ExtensionStatusPlacement,
-	ensureConfigExists,
-	type FooterSegmentsConfig,
-	type GitBranchConfig,
-	type IconMode,
-	loadConfig,
-	type PathDisplayConfig,
-	type PolishedTuiConfig,
-	type SeparatorStyle,
-	saveColorSourcesPatch,
-	saveContextStylePatch,
-	saveExtensionStatusColorMode,
-	saveExtensionStatusPlacement,
-	saveFooterFormatPatch,
-	saveFooterSegmentsPatch,
-	saveGitBranchPatch,
-	saveIconsModePatch,
-	savePathDisplayPatch,
-	saveSeparatorPatch,
-	saveUiFeaturesPatch,
-	type UiFeaturesConfig,
-} from "./config/config.js";
+import { ensureConfigExists, loadConfig, type PolishedTuiConfig } from "./config/config.js";
 import { installFooter } from "./footer/index.js";
-import { buildSessionDurationLabel, invalidateUsageTotalsCache } from "./telemetry/format.js";
-import { emptyGitStatus, readGitStatus } from "./segments/git.js";
+import { buildSessionDurationLabel } from "./telemetry/format.js";
+import { emptyGitStatus } from "./segments/git.js";
 import { LiveContextController } from "./session/live-context.js";
-import { readPackageVersionResult } from "./segments/package-version.js";
-import {
-	createProjectRefreshScheduler,
-	type ScheduleProjectRefreshOptions,
-	type StopProjectRefreshInterval,
-	startProjectRefreshInterval,
-} from "./state/project-refresh.js";
-import { applyProjectRefreshToState } from "./segments/project-state.js";
-import { readRuntimeInfo } from "./segments/runtime.js";
+import { createProjectStateController } from "./state/project-controller.js";
 import { isLiveExtensionContext } from "./session/context.js";
+import { registerSessionEventHandlers } from "./session/event-handlers.js";
 import { SessionLifecycle } from "./session/lifecycle.js";
 import { SkillActivityTracker, type SkillReference } from "./segments/skill-activity.js";
-import { registerZentuiSettingsCommand } from "./commands/settings.js";
+import { registerSettingsController } from "./commands/settings-controller.js";
 import { createInitialState, type FooterState, syncState } from "./state/index.js";
-import { findToolTarget, resetTelemetryState, updateTelemetryState } from "./state/telemetry.js";
 
 function isTuiContext(ctx: ExtensionContext): boolean {
 	try {
@@ -64,11 +30,9 @@ export default function (pi: ExtensionAPI) {
 	let currentConfig: PolishedTuiConfig = loadConfig();
 	let requestFooterRender: (() => void) | undefined;
 	let getActiveExtensionStatuses: () => ReadonlyMap<string, string> = () => new Map();
-	let stopRefreshInterval: StopProjectRefreshInterval = () => {};
 	let footerInstalled = false;
 	let stopSessionTimer: () => void = () => {};
 	let lastDurationLabel = "";
-	let lastProjectCwd: string | undefined;
 
 	const refresh = () => {
 		if (sessionLifecycle.isCurrent()) requestFooterRender?.();
@@ -108,63 +72,19 @@ export default function (pi: ExtensionAPI) {
 		state.skillCounts = skillActivity.counts();
 	};
 
-	type ProjectRefreshTarget = { cwd: string; generation: number };
-	const refreshProjectState = async ({ cwd, generation }: ProjectRefreshTarget) => {
-		if (!sessionLifecycle.isCurrent(generation)) return;
-		const gitCommitConfig = currentConfig.gitCommit;
-		const gitMetricsConfig = currentConfig.gitMetrics;
-		const segments = currentConfig.footerSegments;
-		const fmt = currentConfig.footerFormat;
-		const formatNeedsTag = /\$\{?(?:git_tag|tag)\b/.test(fmt);
-		const formatNeedsCommit = /\$\{?(?:git_commit|commit)\b/.test(fmt);
-		const formatNeedsMetrics = /\$\{?(?:git_metrics|git_added|git_deleted)\b/.test(fmt);
-		const formatNeedsPackage = /\$\{?(?:package|package_version)\b/.test(fmt);
-		const wantExactTag =
-			((segments.gitCommit || formatNeedsCommit) && gitCommitConfig.showTag) || formatNeedsTag;
-		const wantMetrics = segments.gitMetrics || formatNeedsMetrics;
-		const wantPackage = segments.packageVersion || formatNeedsPackage;
-		const [git, runtime, packageVersion, configCounts] = await Promise.all([
-			readGitStatus(cwd, {
-				readExactTag: wantExactTag,
-				readMetrics: wantMetrics,
-				ignoreSubmodules: gitMetricsConfig.ignoreSubmodules,
-			}),
-			readRuntimeInfo(cwd),
-			wantPackage ? readPackageVersionResult(cwd) : Promise.resolve(undefined),
-			Promise.resolve(countConfigEntries(cwd)),
-		]);
-		if (!sessionLifecycle.isCurrent(generation)) return;
-		state.configCounts = configCounts;
-		lastProjectCwd = applyProjectRefreshToState(state, {
-			cwd,
-			previousCwd: lastProjectCwd,
-			git,
-			runtime,
-			packageVersion,
-		});
-	};
-
-	const projectRefreshScheduler = createProjectRefreshScheduler(refreshProjectState, refresh);
-	const scheduleProjectRefresh = (
-		ctx: ExtensionContext,
-		options?: ScheduleProjectRefreshOptions,
-	) => {
-		const generation = sessionLifecycle.currentGeneration();
-		if (!sessionLifecycle.isCurrent(generation)) return;
-		projectRefreshScheduler.schedule({ cwd: ctx.cwd, generation }, options);
-	};
+	const projectController = createProjectStateController({
+		state,
+		lifecycle: sessionLifecycle,
+		getConfig: getCurrentConfig,
+		requestRender: refresh,
+	});
+	const scheduleProjectRefresh = projectController.schedule;
 
 	const refreshInteractiveState = (ctx: ExtensionContext, project = false) => {
 		if (!sessionLifecycle.isCurrent() || !ctx.hasUI) return;
 		syncFooterState(ctx);
 		if (project && currentConfig.features.statusLine) scheduleProjectRefresh(ctx);
 		refresh();
-	};
-
-	const stopProjectRefresh = () => {
-		stopRefreshInterval();
-		stopRefreshInterval = () => {};
-		projectRefreshScheduler.stop();
 	};
 
 	const startSessionTimer = () => {
@@ -217,18 +137,14 @@ export default function (pi: ExtensionAPI) {
 			getLiveContext: () => liveContext.get(),
 		});
 		footerInstalled = true;
-		stopProjectRefresh();
-		stopRefreshInterval = startProjectRefreshInterval(currentConfig.projectRefreshIntervalMs, () =>
-			scheduleProjectRefresh(ctx),
-		);
-		scheduleProjectRefresh(ctx, { force: true });
+		projectController.start(ctx);
 		refresh();
 		startSessionTimer();
 	};
 
 	const uninstallStatusLine = (ctx: ExtensionContext) => {
 		stopSessionTimer();
-		stopProjectRefresh();
+		projectController.stop();
 		ctx.ui.setFooter(undefined);
 		footerInstalled = false;
 		requestFooterRender = undefined;
@@ -247,7 +163,7 @@ export default function (pi: ExtensionAPI) {
 		ensureConfigExists();
 		currentConfig = loadConfig();
 		syncFooterState(ctx);
-		stopProjectRefresh();
+		projectController.stop();
 		applyConfiguredUi(ctx);
 		refresh();
 	};
@@ -256,211 +172,41 @@ export default function (pi: ExtensionAPI) {
 		if (!ctx || !sessionLifecycle.isCurrent()) return;
 		sessionLifecycle.shutdown();
 		stopSessionTimer();
-		stopProjectRefresh();
+		projectController.stop();
 		requestFooterRender = undefined;
 		getActiveExtensionStatuses = () => new Map();
 		if (isTuiContext(ctx)) ctx.ui.setFooter(undefined);
 		footerInstalled = false;
 	};
 
-	const syncInteractiveState = (_event: unknown, ctx: ExtensionContext) => {
-		refreshInteractiveState(ctx);
-	};
-	const syncInteractiveAndProjectState = (_event: unknown, ctx: ExtensionContext) => {
-		refreshInteractiveState(ctx, true);
-	};
-
-	pi.on("session_start", async (_event, ctx) => {
-		sessionLifecycle.start();
-		liveContext.clear();
-		skillActivity.reset();
-		restoreSkillActivity(ctx);
-		state.sessionStartEpoch = Date.now();
-		state.codexUsageStatus = undefined;
-		state.telemetry = resetTelemetryState(state.telemetry, {
-			sessionName: ctx.sessionManager.getSessionName?.(),
-			thinkingLevel: pi.getThinkingLevel(),
-			modelSupportsReasoning: Boolean(ctx.model?.reasoning),
-		});
-		invalidateUsageTotalsCache();
-		lastProjectCwd = undefined;
-		installUi(ctx);
+	registerSessionEventHandlers(pi, {
+		state,
+		lifecycle: sessionLifecycle,
+		liveContext,
+		skillActivity,
+		updateSkillCounts,
+		restoreSkillActivity,
+		installUi,
+		cleanupUi,
+		resetProjectState: projectController.reset,
+		refresh,
+		refreshInteractiveState,
 	});
 
-	pi.on("resources_discover", (_event, ctx) => {
-		sessionLifecycle.defer(() => {
-			if (!isActiveSessionContext(ctx)) return;
-			updateSkillCounts(ctx);
-			refresh();
-		});
-	});
-
-	pi.on("before_agent_start", (event, ctx) => {
-		updateSkillCounts(ctx, event.systemPromptOptions.skills ?? []);
-		skillActivity.activateFromPrompt(event.prompt, ctx.cwd);
-		state.skillCounts = skillActivity.counts();
-		refreshInteractiveState(ctx);
-	});
-
-	registerZentuiSettingsCommand(pi, {
+	registerSettingsController(pi, {
 		getConfig: getCurrentConfig,
-		setColorSources(patch: Partial<ColorSourcesConfig>) {
-			currentConfig = saveColorSourcesPatch(patch);
+		setConfig(config) {
+			currentConfig = config;
 		},
-		setUiFeatures(patch: Partial<UiFeaturesConfig>, ctx: ExtensionContext) {
-			currentConfig = saveUiFeaturesPatch(patch);
-			applyConfiguredUi(ctx);
-		},
-		setFooterSegments(patch: Partial<FooterSegmentsConfig>) {
-			currentConfig = saveFooterSegmentsPatch(patch);
-			startSessionTimer();
-		},
-		setFooterFormat(value: string) {
-			currentConfig = saveFooterFormatPatch(value);
-			startSessionTimer();
-		},
-		setIconMode(mode: IconMode) {
-			currentConfig = saveIconsModePatch(mode);
-		},
-		setContextStyle(style: ContextStyle) {
-			currentConfig = saveContextStylePatch(style);
-		},
-		setSeparator(separator: SeparatorStyle) {
-			currentConfig = saveSeparatorPatch(separator);
-		},
-		setPathDisplay(patch: Partial<PathDisplayConfig>) {
-			currentConfig = savePathDisplayPatch(patch);
-		},
-		setGitBranch(patch: Partial<GitBranchConfig>) {
-			currentConfig = saveGitBranchPatch(patch);
-		},
-		getActiveExtensionStatuses() {
-			return getActiveExtensionStatuses();
-		},
-		setExtensionStatusPlacement(key: string, placement: ExtensionStatusPlacement) {
-			currentConfig = saveExtensionStatusPlacement(key, placement);
-		},
-		setExtensionStatusColorMode(key: string, colorMode: ExtensionStatusColorMode) {
-			currentConfig = saveExtensionStatusColorMode(key, colorMode);
-		},
-		requestRender() {
-			refresh();
-		},
+		applyConfiguredUi,
+		restartSessionTimer: startSessionTimer,
+		getActiveExtensionStatuses: () => getActiveExtensionStatuses(),
+		requestRender: refresh,
 	});
 
 	registerCodexUsage(pi, (ctx, value) => {
 		if (!isActiveSessionContext(ctx)) return;
 		state.codexUsageStatus = value;
 		refresh();
-	});
-
-	pi.on("session_shutdown", async (_event, ctx) => {
-		liveContext.clear();
-		state.codexUsageStatus = undefined;
-		cleanupUi(ctx);
-	});
-
-	const syncInteractiveAndProjectStateWithUsage = (_event: unknown, ctx: ExtensionContext) => {
-		invalidateUsageTotalsCache();
-		refreshInteractiveState(ctx, true);
-	};
-
-	pi.on("agent_start", (event, ctx) => {
-		liveContext.clear();
-		state.telemetry = updateTelemetryState(state.telemetry, {
-			type: "agent-start",
-			at: Date.now(),
-		});
-		syncInteractiveState(event, ctx);
-	});
-	pi.on("agent_end", (event, ctx) => {
-		liveContext.clear();
-		state.telemetry = updateTelemetryState(state.telemetry, {
-			type: "agent-end",
-			at: Date.now(),
-		});
-		syncInteractiveAndProjectState(event, ctx);
-	});
-	pi.on("model_select", (event, ctx) => {
-		liveContext.clear();
-		state.telemetry = updateTelemetryState(state.telemetry, {
-			type: "metadata",
-			modelSupportsReasoning: Boolean(event.model?.reasoning),
-		});
-		syncInteractiveState(event, ctx);
-	});
-	pi.on("thinking_level_select", (event, ctx) => {
-		state.telemetry = updateTelemetryState(state.telemetry, {
-			type: "metadata",
-			thinkingLevel: event.level,
-		});
-		syncInteractiveState(event, ctx);
-	});
-	pi.on("session_info_changed", (event, ctx) => {
-		state.telemetry = updateTelemetryState(state.telemetry, {
-			type: "metadata",
-			sessionName: event.name,
-		});
-		syncInteractiveState(event, ctx);
-	});
-	pi.on("turn_start", (event, ctx) => {
-		state.telemetry = updateTelemetryState(state.telemetry, {
-			type: "turn-start",
-			turnIndex: event.turnIndex,
-		});
-		syncInteractiveState(event, ctx);
-	});
-	pi.on("message_update", (event) => {
-		liveContext.update(event.message);
-	});
-	pi.on("message_end", (event, ctx) => {
-		if (
-			event.message.role === "assistant" &&
-			(event.message.stopReason === "error" || event.message.stopReason === "aborted")
-		) {
-			liveContext.clear();
-		}
-		syncInteractiveAndProjectStateWithUsage(event, ctx);
-	});
-	pi.on("tool_execution_start", (event, ctx) => {
-		liveContext.clear();
-		state.telemetry = updateTelemetryState(state.telemetry, {
-			type: "tool-call",
-			toolCallId: event.toolCallId,
-			name: event.toolName,
-			args:
-				event.args && typeof event.args === "object"
-					? (event.args as Record<string, unknown>)
-					: undefined,
-			at: Date.now(),
-		});
-		syncInteractiveState(event, ctx);
-	});
-	pi.on("tool_execution_end", (event, ctx) => {
-		// `ToolExecutionEndEvent` does not carry `args`; recover the original
-		// `read` target recorded at `tool_execution_start` from telemetry state.
-		if (!event.isError && event.toolName === "read") {
-			const path = findToolTarget(state.telemetry, event.toolCallId);
-			if (typeof path === "string") {
-				skillActivity.activateFromRead(path, ctx.cwd);
-				state.skillCounts = skillActivity.counts();
-			}
-		}
-		state.telemetry = updateTelemetryState(state.telemetry, {
-			type: "tool-result",
-			toolCallId: event.toolCallId,
-			isError: event.isError,
-			at: Date.now(),
-		});
-		syncInteractiveAndProjectState(event, ctx);
-	});
-	pi.on("session_compact", (event, ctx) => {
-		liveContext.clear();
-		syncInteractiveAndProjectStateWithUsage(event, ctx);
-	});
-	pi.on("session_tree", (event, ctx) => {
-		liveContext.clear();
-		restoreSkillActivity(ctx);
-		syncInteractiveAndProjectStateWithUsage(event, ctx);
 	});
 }

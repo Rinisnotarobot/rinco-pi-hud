@@ -129,6 +129,7 @@ export function buildGitStatusLabels(
 export type TelemetryLabels = {
 	projectCategoryLabel: string;
 	sessionCategoryLabel: string;
+	activityCategoryLabel: string;
 	usageCategoryLabel: string;
 	sessionNameLabel: string;
 	modelValueLabel: string;
@@ -155,8 +156,8 @@ export type TelemetryLabels = {
 	activeAgentsLabel: string;
 };
 
-/** Build every session/usage-row telemetry label (model, thinking level, turn
- * count, cache/tool/agent counters, skills, MCP, Codex usage, …). */
+/** Build every session/activity/usage-row telemetry label (model, thinking level,
+ * turn count, cache/tool/agent counters, skills, MCP, Codex usage, …). */
 export function buildTelemetryLabels(
 	ctx: Pick<ExtensionContext, "model">,
 	state: FooterState,
@@ -168,9 +169,10 @@ export function buildTelemetryLabels(
 	const statusStyle = (style: string, text: string) =>
 		text ? renderStyleForSource(theme, colorSource, style, text) : "";
 
-	const projectCategoryLabel = statusStyle(config.colors.cwd, "⌂ project");
-	const sessionCategoryLabel = statusStyle(config.colors.runtimePrefix, "λ session");
-	const usageCategoryLabel = statusStyle(config.colors.contextNormal, "◉ usage");
+	const projectCategoryLabel = statusStyle(config.colors.cwd, "Project");
+	const sessionCategoryLabel = statusStyle(config.colors.runtimePrefix, "Session");
+	const activityCategoryLabel = statusStyle(config.colors.extensionStatus, "Activity");
+	const usageCategoryLabel = statusStyle(config.colors.contextNormal, "Usage");
 
 	const sessionName = safeStatusText(state.telemetry.sessionName, 256);
 	const sessionNameLabel = statusStyle(config.colors.gitBranch, sessionName ? `◈ ${sessionName}` : "");
@@ -182,14 +184,11 @@ export function buildTelemetryLabels(
 	const modelStatusLabel = statusStyle(config.colors.runtimePrefix, modelText ? `λ ${modelText}` : "");
 
 	const thinkingLabel = state.telemetry.modelSupportsReasoning
-		? statusStyle(
-				config.colors.extensionStatus,
-				`◈ ${state.telemetry.thinkingLevel === "off" ? "thinking off" : state.telemetry.thinkingLevel}`,
-			)
+		? statusStyle(config.colors.extensionStatus, `Thinking level: ${state.telemetry.thinkingLevel}`)
 		: "";
 	const turnLabel =
 		state.telemetry.turnIndex > 0
-			? statusStyle(config.colors.extensionStatus, `↺ ${state.telemetry.turnIndex}`)
+			? statusStyle(config.colors.extensionStatus, `Turn ${state.telemetry.turnIndex}`)
 			: "";
 
 	const cacheReadLabel =
@@ -253,7 +252,7 @@ export function buildTelemetryLabels(
 	const configCountsLabel = [instructionFilesLabel, extensionsLabel].filter(Boolean).join(" ");
 
 	const mcpLabel = mcpStatus
-		? statusStyle(config.colors.gitStatus, `⊕ ${mcpStatus.connected}/${mcpStatus.total}`)
+		? statusStyle(config.colors.gitStatus, `MCP ${mcpStatus.connected}/${mcpStatus.total}`)
 		: "";
 
 	const telemetryStats = getTelemetryStats(state.telemetry);
@@ -261,22 +260,26 @@ export function buildTelemetryLabels(
 		.filter(([, count]) => count > 0)
 		.map(([tool, count]) => `${tool}${count > 1 ? ` × ${count}` : ""}`)
 		.join(" ");
-	const toolCountsLabel = statusStyle(config.colors.contextNormal, toolCountsText);
+	const toolCountsLabel = statusStyle(
+		config.colors.contextNormal,
+		toolCountsText ? `Tool ${toolCountsText}` : "",
+	);
 	const runningToolsText = telemetryStats.recentRunningTools
 		.map((tool) => {
 			const target = tool.target ? `:${truncateToWidth(tool.target, 18, "…")}` : "";
-			return `↻ ${tool.name}${target} (${buildSessionDurationLabel(tool.startTime)})`;
+			return `Tool ${tool.name}${target} (${buildSessionDurationLabel(tool.startTime)})`;
 		})
 		.join(" ");
 	const runningToolsLabel = statusStyle(config.colors.contextWarning, runningToolsText);
 	const activeAgentsLabel =
 		telemetryStats.activeAgentRuns > 0
-			? statusStyle(config.colors.extensionStatus, `↻ agent × ${telemetryStats.activeAgentRuns}`)
-			: statusStyle(config.colors.muted, "agent idle");
+			? statusStyle(config.colors.extensionStatus, `Agent × ${telemetryStats.activeAgentRuns}`)
+			: statusStyle(config.colors.muted, "Agent idle");
 
 	return {
 		projectCategoryLabel,
 		sessionCategoryLabel,
+		activityCategoryLabel,
 		usageCategoryLabel,
 		sessionNameLabel,
 		modelValueLabel,

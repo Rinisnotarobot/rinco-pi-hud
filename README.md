@@ -12,7 +12,7 @@
 
 </div>
 
-Rinco Pi HUD provides a rich, real-time status footer for Pi TUI sessions. It displays project state, Git metrics, runtime versions, session activity, model usage, token costs, and more — all in a configurable three-line or single-line layout. Pi loads the TypeScript extension directly, so no build step is required (`tsconfig.json` sets `noEmit: true` and is used only for `npm run typecheck`).
+Rinco Pi HUD provides a rich, real-time status footer for Pi TUI sessions. It displays project state, Git metrics, runtime versions, session activity, model usage, token costs, and more — all in a responsive four-group or customizable single-line layout. Pi loads the TypeScript extension directly, so no build step is required (`tsconfig.json` sets `noEmit: true` and is used only for `npm run typecheck`).
 
 ## Features
 
@@ -22,7 +22,7 @@ Rinco Pi HUD provides a rich, real-time status footer for Pi TUI sessions. It di
 - **Model quota** — Automatic Codex weekly quota or Token Switch balance display by model provider.
 - **Git awareness** — Branches, detached HEAD, tags, ahead/behind, stash, merge/rebase conflicts, and dirty state.
 - **Runtime detection** — Node, Python, Go, Rust, Java, and 60+ other runtimes with package version parsing.
-- **Configurable layout** — Three-line categorized layout by default, or fully customizable single-line templates.
+- **Configurable layout** — Responsive Project, Session, Activity, and Usage groups by default, or fully customizable single-line templates.
 - **Extension statuses** — Reads third-party extension statuses and places them by configurable position and color mode.
 - **Safe fallback** — Graceful timeout and error handling; no stale data after session shutdown.
 
@@ -99,7 +99,7 @@ The HUD footer is enabled by default. Run `/zentui` to open the interactive sett
 
 ### Layout
 
-The default three-line layout groups project, session, and usage information. Set `footerFormat` to a template string for a single-line layout:
+The default layout groups Project, Session, Activity, and Usage information. Long groups wrap at complete segment boundaries with aligned continuation lines. Set `footerFormat` to a template string for a single-line layout:
 
 ```text
 /zentui format "$cwd( $git_branch)$fill($context)( $tokens)( $cost)"

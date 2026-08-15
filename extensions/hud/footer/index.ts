@@ -8,6 +8,7 @@ import {
 } from "../segments/extension-status.js";
 import { composeCategorizedFooterRows, composeFooterContent } from "./layout.js";
 import { parseFooterFormat, renderFormatSplit, stripOrphanSeparators } from "./format.js";
+import { buildCategorizedFooterGroups } from "./groups.js";
 import {
 	buildGitStatusLabels,
 	buildTelemetryLabels,
@@ -137,6 +138,7 @@ export function installFooter(
 				const {
 					projectCategoryLabel,
 					sessionCategoryLabel,
+					activityCategoryLabel,
 					usageCategoryLabel,
 					sessionNameLabel,
 					modelValueLabel,
@@ -410,7 +412,7 @@ export function installFooter(
 				const sessionDurationSegment = (() => {
 					if (!config.footerSegments.sessionDuration || !state.sessionStartEpoch) return "";
 					const timeLabel = buildSessionDurationLabel(state.sessionStartEpoch);
-					const prefix = renderStyleForSource(theme, colorSource, "", "up for");
+					const prefix = renderStyleForSource(theme, colorSource, "", "Duration");
 					const time = renderStyleForSource(
 						theme,
 						colorSource,
@@ -436,53 +438,13 @@ export function installFooter(
 						)
 					: "";
 				const timeSegment = config.footerSegments.time
-					? renderStyleForSource(
+					? `${renderStyleForSource(theme, colorSource, "", "Time")} ${renderStyleForSource(
 							theme,
 							colorSource,
 							config.colors.time,
-							formatTimeLabel(config.icons.time),
-						)
+							formatTimeLabel(""),
+						)}`
 					: "";
-				const projectSegments = [
-					projectCategoryLabel,
-					config.footerSegments.cwd ? cwdValueLabel : "",
-					branchLabel,
-					gitCommitLabel,
-					gitMetricsLabel,
-					packageVersionLabel,
-					runtimeLabel,
-					config.footerSegments.configCounts ? configCountsLabel : "",
-					osSegment,
-					usernameSegment,
-				].filter(Boolean);
-				const sessionSegments = [
-					sessionCategoryLabel,
-					config.footerSegments.sessionName ? sessionNameLabel : "",
-					config.footerSegments.model ? modelValueLabel : "",
-					config.footerSegments.thinking ? thinkingLabel : "",
-					config.footerSegments.turnCount ? turnLabel : "",
-					config.footerSegments.skills ? skillsLabel : "",
-					config.footerSegments.mcp ? mcpLabel : "",
-					config.footerSegments.toolActivity ? runningToolsLabel || toolCountsLabel : "",
-					config.footerSegments.agentActivity ? activeAgentsLabel : "",
-				].filter(Boolean);
-				const usageSegments = [
-					usageCategoryLabel,
-					config.footerSegments.context
-						? renderStyleForSource(theme, colorSource, contextColor, contextLabel)
-						: "",
-					config.footerSegments.tokens
-						? renderStyleForSource(theme, colorSource, config.colors.tokens, state.tokenLabel)
-						: "",
-					config.footerSegments.cacheDetails ? cacheDetailsLabel : "",
-					config.footerSegments.cost
-						? renderStyleForSource(theme, colorSource, config.colors.cost, state.costLabel)
-						: "",
-					config.footerSegments.codexUsage ? codexUsageLabel : "",
-					sessionDurationSegment,
-					timeSegment,
-				].filter(Boolean);
-
 				const formatNeedsMcp = /\$\{?mcp\b/.test(config.footerFormat);
 				const dedicatedMcpVisible = Boolean(
 					mcpStatus && (config.footerFormat ? formatNeedsMcp : config.footerSegments.mcp),
@@ -522,20 +484,52 @@ export function installFooter(
 					return [frame(content)];
 				}
 
-				const contents = composeCategorizedFooterRows(
-					{
-						project: projectSegments,
-						session: [
-							...sessionSegments,
-							...extensionLeft,
-							...extensionMiddle,
-							...extensionRight,
-						],
-						usage: usageSegments,
+				const groups = buildCategorizedFooterGroups({
+					project: {
+						category: projectCategoryLabel,
+						cwd: config.footerSegments.cwd ? cwdValueLabel : "",
+						git: branchLabel,
+						commit: gitCommitLabel,
+						metrics: gitMetricsLabel,
+						runtime: runtimeLabel,
+						packageVersion: packageVersionLabel,
+						configCounts: config.footerSegments.configCounts ? configCountsLabel : "",
+						os: osSegment,
+						username: usernameSegment,
 					},
-					separator,
-					innerWidth,
-				);
+					session: {
+						category: sessionCategoryLabel,
+						name: config.footerSegments.sessionName ? sessionNameLabel : "",
+						model: config.footerSegments.model ? modelValueLabel : "",
+						thinking: config.footerSegments.thinking ? thinkingLabel : "",
+						turn: config.footerSegments.turnCount ? turnLabel : "",
+						duration: sessionDurationSegment,
+					},
+					activity: {
+						category: activityCategoryLabel,
+						tool: config.footerSegments.toolActivity ? runningToolsLabel || toolCountsLabel : "",
+						agent: config.footerSegments.agentActivity ? activeAgentsLabel : "",
+						skills: config.footerSegments.skills ? skillsLabel : "",
+						mcp: config.footerSegments.mcp ? mcpLabel : "",
+						extensions: [...extensionLeft, ...extensionMiddle, ...extensionRight],
+					},
+					usage: {
+						category: usageCategoryLabel,
+						context: config.footerSegments.context
+							? renderStyleForSource(theme, colorSource, contextColor, contextLabel)
+							: "",
+						tokens: config.footerSegments.tokens
+							? renderStyleForSource(theme, colorSource, config.colors.tokens, state.tokenLabel)
+							: "",
+						cache: config.footerSegments.cacheDetails ? cacheDetailsLabel : "",
+						cost: config.footerSegments.cost
+							? renderStyleForSource(theme, colorSource, config.colors.cost, state.costLabel)
+							: "",
+						quota: config.footerSegments.codexUsage ? codexUsageLabel : "",
+						time: timeSegment,
+					},
+				});
+				const contents = composeCategorizedFooterRows(groups, separator, innerWidth);
 				return contents.map(frame);
 			},
 		};

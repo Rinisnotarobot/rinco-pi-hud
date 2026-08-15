@@ -3,8 +3,11 @@ import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 export type CategorizedFooterRows = {
 	project: string[];
 	session: string[];
+	activity: string[];
 	usage: string[];
 };
+
+const MIN_WRAPPED_CONTENT_WIDTH = 4;
 
 function joinStatusTexts(statusTexts: string[], separator: string): string {
 	return statusTexts.filter(Boolean).join(separator);
@@ -164,20 +167,74 @@ export function composeFooterContent(
 	return `${left}${" ".repeat(leftPadding)}${middle}${" ".repeat(rightPadding)}${right}`;
 }
 
-function composeLeftAlignedRow(parts: string[], separator: string, innerWidth: number): string {
-	const content = joinStatusTexts(parts, separator);
-	if (innerWidth <= 1) return truncateToWidth(content, Math.max(0, innerWidth), "");
-	return truncateToWidth(content, innerWidth, "…");
+function padToVisibleWidth(text: string, width: number): string {
+	return `${text}${" ".repeat(Math.max(0, width - visibleWidth(text)))}`;
+}
+
+function categoryLabel(parts: readonly string[]): string {
+	return parts.find(Boolean) ?? "";
+}
+
+function composeNarrowCategorizedRow(
+	category: string,
+	segments: string[],
+	separator: string,
+	innerWidth: number,
+): string[] {
+	const content = joinStatusTexts([category, ...segments], separator);
+	const ellipsis = innerWidth > 1 ? "…" : "";
+	return [truncateToWidth(content, Math.max(0, innerWidth), ellipsis)];
+}
+
+function composeWrappedCategorizedRow(
+	parts: string[],
+	separator: string,
+	innerWidth: number,
+	categoryWidth: number,
+): string[] {
+	const [rawCategory = "", ...segments] = parts.filter(Boolean);
+	const category = padToVisibleWidth(rawCategory, categoryWidth);
+	if (segments.length === 0) return [truncateToWidth(rawCategory, innerWidth, "")];
+
+	const firstPrefix = `${category}${separator}`;
+	const continuationPrefix = `${" ".repeat(categoryWidth)}${separator}`;
+	const contentWidth = innerWidth - visibleWidth(firstPrefix);
+	if (contentWidth < MIN_WRAPPED_CONTENT_WIDTH) {
+		return composeNarrowCategorizedRow(category, segments, separator, innerWidth);
+	}
+
+	let lines: string[] = [];
+	let current: string[] = [];
+	let prefix = firstPrefix;
+	for (const segment of segments) {
+		const candidate = joinStatusTexts([...current, segment], separator);
+		if (visibleWidth(candidate) <= contentWidth) {
+			current = [...current, segment];
+			continue;
+		}
+		if (current.length > 0) {
+			lines = [...lines, `${prefix}${joinStatusTexts(current, separator)}`];
+			prefix = continuationPrefix;
+			current = [];
+		}
+		if (visibleWidth(segment) <= contentWidth) {
+			current = [segment];
+		} else {
+			lines = [...lines, `${prefix}${truncateToWidth(segment, contentWidth, "…")}`];
+			prefix = continuationPrefix;
+		}
+	}
+	return current.length > 0 ? [...lines, `${prefix}${joinStatusTexts(current, separator)}`] : lines;
 }
 
 export function composeCategorizedFooterRows(
 	rows: CategorizedFooterRows,
 	separator: string,
 	innerWidth: number,
-): [string, string, string] {
-	return [
-		composeLeftAlignedRow(rows.project, separator, innerWidth),
-		composeLeftAlignedRow(rows.session, separator, innerWidth),
-		composeLeftAlignedRow(rows.usage, separator, innerWidth),
-	];
+): string[] {
+	const groups = [rows.project, rows.session, rows.activity, rows.usage];
+	const categoryWidth = Math.max(...groups.map((parts) => visibleWidth(categoryLabel(parts))));
+	return groups.flatMap((parts) =>
+		composeWrappedCategorizedRow(parts, separator, innerWidth, categoryWidth),
+	);
 }

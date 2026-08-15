@@ -2,46 +2,47 @@
 
 ## Default layout
 
-When `footerFormat` is empty, the HUD displays a three-line categorized layout:
+When `footerFormat` is empty, the HUD displays four semantic groups:
 
 ```text
-⌂ project · pi-sakura ·  main ·  24.18
-λ session · gpt-5.3 · high · ↺ 8 · ★ 2/3 · ⊕ 2/2
-◉ usage · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030
+Project  · pi-sakura ·  main ·  24.18
+Session  · gpt-5.3 · Thinking level: high · Turn 8
+Activity · Agent idle · Skill 2/3 · MCP 2/2
+Usage    · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030
 ```
 
-Each line independently computes visible width. Extension statuses are appended to the second line by placement (`left`, `middle`, `right`). When space is tight, lines are truncated at the end with an ellipsis.
+The category column is sized from visible text so every separator aligns. When a row exceeds the terminal width, complete status segments move to an indented continuation line. Only a single segment that is wider than the available content area is truncated. Third-party extension statuses appear on the Activity group in configured `left`, `middle`, then `right` order.
 
 ## Built-in status segments
 
-| Key | Default | Line | Description |
+| Key | Default | Group | Description |
 | --- | --- | --- | --- |
-| `os` | on | 1 | OS icon/text per platform |
-| `username` | off | 1 | `user@hostname` |
-| `cwd` | on | 1 | Current working directory |
-| `gitBranch` | on | 1 | Branch name or `HEAD` when detached |
-| `gitStatus` | on | 1 | Conflicts, staged, modified, untracked, stash, ahead/behind |
-| `gitCounts` | off | sub | Numeric counts for ahead/behind and stash |
-| `gitCommit` | off | 1 | Short commit hash and optional exact tag |
-| `gitMetrics` | off | 1 | Added/deleted lines from `git diff HEAD --numstat` |
-| `packageVersion` | off | 1 | Project manifest version |
-| `runtime` | on | 1 | Detected language/build system and tool version |
-| `configCounts` | off | 1 | Instruction files and installed Pi packages count |
-| `sessionName` | on | 2 | Current Pi session name |
-| `model` | on | 2 | Provider and model ID |
-| `thinking` | on | 2 | Thinking level when reasoning-capable |
-| `turnCount` | on | 2 | Current turn index |
-| `skills` | on | 2 | Active/available skills count, e.g. `★ 1/3` |
-| `mcp` | on | 2 | MCP connected/total servers |
-| `toolActivity` | on | 2 | Native tool completion count or recent running status |
-| `agentActivity` | on | 2 | Active primary agent runs |
-| `context` | on | 3 | Context percentage, window size, and/or gauge |
-| `tokens` | on | 3 | Input, output, cache token summary |
-| `cacheDetails` | on | 3 | Cumulative cache read/write tokens |
-| `cost` | on | 3 | Cumulative session cost |
-| `codexUsage` | on | 3 | Codex weekly quota remaining |
-| `sessionDuration` | off | 3 | Current session duration |
-| `time` | off | 3 | Current time `HH:MM` |
+| `cwd` | on | Project | Current working directory |
+| `gitBranch` | on | Project | Branch name or `HEAD` when detached |
+| `gitStatus` | on | Project | Conflicts, staged, modified, untracked, stash, ahead/behind |
+| `gitCounts` | off | Project | Numeric counts embedded in ahead/behind and stash status |
+| `gitCommit` | off | Project | Short commit hash and optional exact tag |
+| `gitMetrics` | off | Project | Added/deleted lines from `git diff HEAD --numstat` |
+| `runtime` | on | Project | Detected language/build system and tool version |
+| `packageVersion` | off | Project | Project manifest version |
+| `configCounts` | off | Project | Instruction files and installed Pi packages count |
+| `os` | on | Project | OS icon/text per platform |
+| `username` | off | Project | `user@hostname` |
+| `sessionName` | on | Session | Current Pi session name |
+| `model` | on | Session | Provider and model ID |
+| `thinking` | on | Session | Thinking level when reasoning-capable |
+| `turnCount` | on | Session | Current turn index |
+| `sessionDuration` | off | Session | Current session duration |
+| `toolActivity` | on | Activity | Native tool completion count or recent running status |
+| `agentActivity` | on | Activity | Active primary agent runs |
+| `skills` | on | Activity | Active/available skills count, e.g. `Skill 1/3` |
+| `mcp` | on | Activity | MCP connected/total servers |
+| `context` | on | Usage | Context percentage, window size, and/or gauge |
+| `tokens` | on | Usage | Input, output, cache token summary |
+| `cacheDetails` | on | Usage | Cumulative cache read/write tokens |
+| `cost` | on | Usage | Cumulative session cost |
+| `codexUsage` | on | Usage | Codex weekly quota remaining |
+| `time` | off | Usage | Current time `HH:MM` |
 
 ## Template syntax
 
@@ -100,7 +101,7 @@ Clear it:
 | `$instruction_files` | `AGENTS.md` + `CLAUDE.md` total |
 | `$agents_files` | `AGENTS.md` count |
 | `$claude_files` | `CLAUDE.md` count |
-| `$skills` | Active/available skills, e.g. `★ 1/3` |
+| `$skills` | Active/available skills, e.g. `Skill 1/3` |
 | `$active_skills` | Active skills count only |
 | `$extensions` | Installed Pi packages count |
 | `$mcp` | MCP connected/total |
