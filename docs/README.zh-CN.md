@@ -16,13 +16,14 @@ Rinco Pi HUD 为 Pi TUI 会话提供丰富的实时状态脚注，可显示项�
 
 ## 功能
 
-- **Project state**：当前目录、Git 分支、Commit、Tag、工作区状态、差异指标和运行时版本。
-- **Session activity**：模型、Provider、Context 用量、Token、缓存、会话费用、轮次和 Thinking 等级。
-- **Tool and agent activity**：Native Tool 完成次数、正在运行的 Tool、活跃 Agent 数、Skill 和 MCP Server 状态。
+- **Project state**：当前目录、Git 分支、Commit、Tag、工作区状态、Git 操作状态、差异指标和运行时版本。
+- **Session activity**：模型、Provider、Context 用量、可独立控制的输入/输出 Token、缓存、会话费用、轮次和 Thinking 等级。
+- **Tool and agent activity**：可分别控制正在运行的 Tool、已完成 Tool 计数、活跃 Agent、空闲状态、Skill 和 MCP Server 状态。
 - **Model quota**：根据当前模型自动切换 Codex 周限额或 Token Switch 余额。
 - **Git awareness**：分支、Detached HEAD、Tag、Ahead/Behind、Stash、合并冲突和脏状态。
 - **Runtime detection**：支持 Node、Python、Go、Rust、Java 等 60+ 运行时，并解析项目清单版本。
 - **Configurable layout**：默认使用响应式 Project、Session、Activity、Usage 四分组布局，或完全自定义的单行模板。
+- **Granular status controls**：可在 `/zentui` 中分别控制 Git 操作状态、Tool 运行状态/计数、Agent 活跃/空闲状态及输入/输出 Token。
 - **Extension statuses**：读取第三方扩展发布的状态，按配置的位置和颜色模式显示。
 - **Safe fallback**：超时和错误处理优雅，会话关闭后不留过期数据。
 
@@ -82,18 +83,18 @@ HUD 脚注默认启用。运行 `/zentui` 打开交互式设置。
 
 | 路径 | 说明 |
 | --- | --- |
-| [`extensions/hud/index.ts`](../extensions/hud/index.ts) | 扩展生命周期与副作用编排 |
-| [`extensions/hud/config/`](../extensions/hud/config/config.ts) | 配置模型、归一化与持久化 |
-| [`extensions/hud/footer/`](../extensions/hud/footer/index.ts) | 脚注渲染、分类布局与模板解析 |
+| [`extensions/hud/index.ts`](../extensions/hud/index.ts) | Controller、共享状态与 UI 安装的组合入口 |
+| [`extensions/hud/config/`](../extensions/hud/config/config.ts) | 配置模型、归一化、迁移与持久化 |
+| [`extensions/hud/footer/`](../extensions/hud/footer/index.ts) | 脚注渲染、语义分组、响应式布局与模板解析 |
 | [`extensions/hud/segments/`](../extensions/hud/segments/) | 状态采集器：Git、运行时、MCP、Skill、项目等 |
 | [`extensions/hud/telemetry/`](../extensions/hud/telemetry/format.ts) | 用量格式化、Token Switch 与 Codex 订阅客户端 |
-| [`extensions/hud/session/`](../extensions/hud/session/) | 会话生命周期、上下文与实时上下文覆盖 |
-| [`extensions/hud/state/`](../extensions/hud/state/) | 聚合状态、遥测与项目刷新 |
-| [`extensions/hud/commands/`](../extensions/hud/commands/settings.ts) | `/zentui` 命令与交互式 TUI 设置 |
+| [`extensions/hud/session/`](../extensions/hud/session/) | Pi 事件注册、会话生命周期与实时 Context 覆盖 |
+| [`extensions/hud/state/`](../extensions/hud/state/) | 聚合状态、Telemetry Reducer 与项目刷新 Controller |
+| [`extensions/hud/commands/`](../extensions/hud/commands/settings.ts) | `/zentui` 设置界面与配置 Controller |
 | [`extensions/hud/ui/`](../extensions/hud/ui/) | 图标与终端样式工具 |
 | [`docs/footer.md`](footer.md) | 完整脚注配置参考 |
 | [`docs/CONTRIBUTING.md`](CONTRIBUTING.md) | 本地开发、测试规范和 PR 检查清单 |
-| [`tests/`](../tests/) | Vitest 测试套件（34+ 测试用例，6 个文件） |
+| [`tests/`](../tests/) | Vitest 测试套件（41 个测试用例，8 个文件） |
 
 ## 定制
 
@@ -109,13 +110,16 @@ HUD 脚注默认启用。运行 `/zentui` 打开交互式设置。
 
 ### 状态段
 
-通过 `/zentui` 启用或禁用单个状态段：
+运行 `/zentui` 并进入 **Built-in segments**，即可启用或禁用单个状态：
 
-```text
-/zentui statusline enable
-/zentui statusline disable
-/zentui statusline toggle
-```
+| 分组 | 可独立控制的状态 |
+| --- | --- |
+| Project | Git 状态、Git 操作状态（`MERGING`、`REBASING` 等）、Commit、差异指标、运行时、包版本、OS 和用户 |
+| Session | 模型、Thinking 等级、轮次和会话时长 |
+| Activity | 正在运行的 Tool、已完成 Tool 计数、活跃 Agent、`Agent idle`、Skill 和 MCP |
+| Usage | Context、输入 Token、输出 Token、缓存详情/命中率、费用、限额和时间 |
+
+使用旧版聚合开关 `tokens`、`toolActivity` 或 `agentActivity` 的配置会自动迁移。仍可通过 `/zentui statusline enable|disable|toggle` 控制整个脚注。
 
 ### 扩展状态
 

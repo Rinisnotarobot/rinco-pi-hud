@@ -47,12 +47,15 @@ export type FooterSegmentsConfig = {
 	cwd: boolean;
 	gitBranch: boolean;
 	gitStatus: boolean;
+	gitState: boolean;
 	gitCounts: boolean;
 	gitCommit: boolean;
 	gitMetrics: boolean;
 	runtime: boolean;
 	context: boolean;
-	tokens: boolean;
+	inputTokens: boolean;
+	outputTokens: boolean;
+	cacheDetails: boolean;
 	cost: boolean;
 	sessionDuration: boolean;
 	username: boolean;
@@ -63,13 +66,14 @@ export type FooterSegmentsConfig = {
 	model: boolean;
 	thinking: boolean;
 	turnCount: boolean;
-	cacheDetails: boolean;
 	codexUsage: boolean;
 	configCounts: boolean;
 	skills: boolean;
 	mcp: boolean;
-	toolActivity: boolean;
-	agentActivity: boolean;
+	runningTools: boolean;
+	toolCounts: boolean;
+	activeAgents: boolean;
+	agentIdle: boolean;
 };
 
 export type ExtensionStatusPlacement = "off" | "left" | "middle" | "right";
@@ -258,10 +262,13 @@ export const defaultConfig: PolishedTuiConfig = {
 		cwd: true,
 		gitBranch: true,
 		gitStatus: true,
+		gitState: true,
 		gitCounts: false,
 		runtime: true,
 		context: true,
-		tokens: true,
+		inputTokens: true,
+		outputTokens: true,
+		cacheDetails: true,
 		cost: true,
 		sessionDuration: false,
 		username: false,
@@ -274,13 +281,14 @@ export const defaultConfig: PolishedTuiConfig = {
 		model: true,
 		thinking: true,
 		turnCount: true,
-		cacheDetails: true,
 		codexUsage: true,
 		configCounts: false,
 		skills: true,
 		mcp: true,
-		toolActivity: true,
-		agentActivity: true,
+		runningTools: true,
+		toolCounts: true,
+		activeAgents: true,
+		agentIdle: true,
 	},
 	gitCommit: {
 		hashLength: 7,

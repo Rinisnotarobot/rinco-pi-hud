@@ -155,6 +155,17 @@ function footerSegmentValue(
 	return typeof value === "boolean" ? value : defaultConfig.footerSegments[key];
 }
 
+function footerSegmentValueWithLegacy(
+	record: Record<string, unknown>,
+	key: keyof FooterSegmentsConfig,
+	legacyKey: "tokens" | "toolActivity" | "agentActivity",
+): boolean {
+	const value = record[key];
+	if (typeof value === "boolean") return value;
+	const legacyValue = record[legacyKey];
+	return typeof legacyValue === "boolean" ? legacyValue : defaultConfig.footerSegments[key];
+}
+
 function definedColors(
 	colors: Partial<Record<keyof PolishedTuiConfig["colors"], string | undefined>>,
 ): Partial<PolishedTuiConfig["colors"]> {
@@ -212,10 +223,13 @@ function normalizeFooterSegments(record: Record<string, unknown>): FooterSegment
 		cwd: footerSegmentValue(record, "cwd"),
 		gitBranch: footerSegmentValue(record, "gitBranch"),
 		gitStatus: footerSegmentValue(record, "gitStatus"),
+		gitState: footerSegmentValue(record, "gitState"),
 		gitCounts: footerSegmentValue(record, "gitCounts"),
 		runtime: footerSegmentValue(record, "runtime"),
 		context: footerSegmentValue(record, "context"),
-		tokens: footerSegmentValue(record, "tokens"),
+		inputTokens: footerSegmentValueWithLegacy(record, "inputTokens", "tokens"),
+		outputTokens: footerSegmentValueWithLegacy(record, "outputTokens", "tokens"),
+		cacheDetails: footerSegmentValue(record, "cacheDetails"),
 		cost: footerSegmentValue(record, "cost"),
 		sessionDuration: footerSegmentValue(record, "sessionDuration"),
 		username: footerSegmentValue(record, "username"),
@@ -228,13 +242,14 @@ function normalizeFooterSegments(record: Record<string, unknown>): FooterSegment
 		model: footerSegmentValue(record, "model"),
 		thinking: footerSegmentValue(record, "thinking"),
 		turnCount: footerSegmentValue(record, "turnCount"),
-		cacheDetails: footerSegmentValue(record, "cacheDetails"),
 		codexUsage: footerSegmentValue(record, "codexUsage"),
 		configCounts: footerSegmentValue(record, "configCounts"),
 		skills: footerSegmentValue(record, "skills"),
 		mcp: footerSegmentValue(record, "mcp"),
-		toolActivity: footerSegmentValue(record, "toolActivity"),
-		agentActivity: footerSegmentValue(record, "agentActivity"),
+		runningTools: footerSegmentValueWithLegacy(record, "runningTools", "toolActivity"),
+		toolCounts: footerSegmentValueWithLegacy(record, "toolCounts", "toolActivity"),
+		activeAgents: footerSegmentValueWithLegacy(record, "activeAgents", "agentActivity"),
+		agentIdle: footerSegmentValueWithLegacy(record, "agentIdle", "agentActivity"),
 	};
 }
 

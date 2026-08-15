@@ -95,10 +95,7 @@ export default function (pi: ExtensionAPI) {
 		const needsWallClock = segments.time || /\$\{?time\b/.test(format);
 		const needsDuration =
 			segments.sessionDuration || /\$\{?(?:session_duration|duration)\b/.test(format);
-		const needsActivityClock =
-			segments.toolActivity ||
-			segments.agentActivity ||
-			/\$\{?(?:running_tools|active_agents|agents)\b/.test(format);
+		const needsActivityClock = segments.runningTools || /\$\{?running_tools\b/.test(format);
 		if (
 			!currentConfig.features.statusLine ||
 			!(needsWallClock || needsDuration || needsActivityClock)

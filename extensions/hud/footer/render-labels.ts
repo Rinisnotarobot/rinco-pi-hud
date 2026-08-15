@@ -138,6 +138,8 @@ export type TelemetryLabels = {
 	modelId: string;
 	thinkingLabel: string;
 	turnLabel: string;
+	inputTokensLabel: string;
+	outputTokensLabel: string;
 	cacheReadLabel: string;
 	cacheWriteLabel: string;
 	cacheHitLabel: string;
@@ -154,6 +156,7 @@ export type TelemetryLabels = {
 	toolCountsLabel: string;
 	runningToolsLabel: string;
 	activeAgentsLabel: string;
+	agentIdleLabel: string;
 };
 
 /** Build every session/activity/usage-row telemetry label (model, thinking level,
@@ -191,6 +194,14 @@ export function buildTelemetryLabels(
 			? statusStyle(config.colors.extensionStatus, `Turn ${state.telemetry.turnIndex}`)
 			: "";
 
+	const inputTokensLabel = statusStyle(
+		config.colors.tokens,
+		`↑ ${formatCount(state.usageTotals.input)}`,
+	);
+	const outputTokensLabel = statusStyle(
+		config.colors.tokens,
+		`↓ ${formatCount(state.usageTotals.output)}`,
+	);
 	const cacheReadLabel =
 		state.usageTotals.cacheRead > 0
 			? statusStyle(config.colors.tokens, `R ${formatCount(state.usageTotals.cacheRead)}`)
@@ -206,7 +217,9 @@ export function buildTelemetryLabels(
 					`CH ${state.usageTotals.latestCacheHitRate.toFixed(1)}%`,
 				)
 			: "";
-	const cacheDetailsLabel = [cacheReadLabel, cacheWriteLabel].filter(Boolean).join(" ");
+	const cacheDetailsLabel = [cacheReadLabel, cacheWriteLabel, cacheHitLabel]
+		.filter(Boolean)
+		.join(" ");
 
 	const codexStyle =
 		state.codexUsageStatus === "checking"
@@ -274,7 +287,9 @@ export function buildTelemetryLabels(
 	const activeAgentsLabel =
 		telemetryStats.activeAgentRuns > 0
 			? statusStyle(config.colors.extensionStatus, `Agent × ${telemetryStats.activeAgentRuns}`)
-			: statusStyle(config.colors.muted, "Agent idle");
+			: "";
+	const agentIdleLabel =
+		telemetryStats.activeAgentRuns === 0 ? statusStyle(config.colors.muted, "Agent idle") : "";
 
 	return {
 		projectCategoryLabel,
@@ -288,6 +303,8 @@ export function buildTelemetryLabels(
 		modelId,
 		thinkingLabel,
 		turnLabel,
+		inputTokensLabel,
+		outputTokensLabel,
 		cacheReadLabel,
 		cacheWriteLabel,
 		cacheHitLabel,
@@ -304,5 +321,6 @@ export function buildTelemetryLabels(
 		toolCountsLabel,
 		runningToolsLabel,
 		activeAgentsLabel,
+		agentIdleLabel,
 	};
 }

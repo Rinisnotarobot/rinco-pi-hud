@@ -20,6 +20,7 @@ The category column is sized from visible text so every separator aligns. When a
 | `cwd` | on | Project | Current working directory |
 | `gitBranch` | on | Project | Branch name or `HEAD` when detached |
 | `gitStatus` | on | Project | Conflicts, staged, modified, untracked, stash, ahead/behind |
+| `gitState` | on | Project | Git operation state such as `MERGING` or `REBASING` |
 | `gitCounts` | off | Project | Numeric counts embedded in ahead/behind and stash status |
 | `gitCommit` | off | Project | Short commit hash and optional exact tag |
 | `gitMetrics` | off | Project | Added/deleted lines from `git diff HEAD --numstat` |
@@ -33,13 +34,16 @@ The category column is sized from visible text so every separator aligns. When a
 | `thinking` | on | Session | Thinking level when reasoning-capable |
 | `turnCount` | on | Session | Current turn index |
 | `sessionDuration` | off | Session | Current session duration |
-| `toolActivity` | on | Activity | Native tool completion count or recent running status |
-| `agentActivity` | on | Activity | Active primary agent runs |
+| `runningTools` | on | Activity | Currently running native tools and elapsed time |
+| `toolCounts` | on | Activity | Cumulative completed native-tool counts |
+| `activeAgents` | on | Activity | Active primary agent runs |
+| `agentIdle` | on | Activity | `Agent idle` when no primary agent run is active |
 | `skills` | on | Activity | Active/available skills count, e.g. `Skill 1/3` |
 | `mcp` | on | Activity | MCP connected/total servers |
 | `context` | on | Usage | Context percentage, window size, and/or gauge |
-| `tokens` | on | Usage | Input, output, cache token summary |
-| `cacheDetails` | on | Usage | Cumulative cache read/write tokens |
+| `inputTokens` | on | Usage | Cumulative input tokens |
+| `outputTokens` | on | Usage | Cumulative output tokens |
+| `cacheDetails` | on | Usage | Cache read/write tokens and latest hit rate |
 | `cost` | on | Usage | Cumulative session cost |
 | `codexUsage` | on | Usage | Codex weekly quota remaining |
 | `time` | off | Usage | Current time `HH:MM` |

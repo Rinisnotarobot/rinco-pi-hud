@@ -26,8 +26,10 @@ test("footer groups preserve semantic order and discard unavailable segments", (
 		},
 		activity: {
 			category: "Activity",
-			tool: "",
-			agent: "Agent idle",
+			runningTools: "Tool bash:test (2s)",
+			toolCounts: "Tool read × 2",
+			activeAgents: "",
+			agentIdle: "Agent idle",
 			skills: "Skill 2/3",
 			mcp: "MCP 2/2",
 			extensions: ["Status A", "", "Status B"],
@@ -35,7 +37,8 @@ test("footer groups preserve semantic order and discard unavailable segments", (
 		usage: {
 			category: "Usage",
 			context: "35%/200k",
-			tokens: "↑ 4k ↓ 1k",
+			inputTokens: "↑ 4k",
+			outputTokens: "↓ 1k",
 			cache: "",
 			cost: "$ 0.03",
 			quota: "Codex 76%",
@@ -57,7 +60,16 @@ test("footer groups preserve semantic order and discard unavailable segments", (
 			"user@host",
 		],
 		session: ["Session", "work", "gpt-5.3", "Thinking level: medium", "Turn 4", "Duration 2m"],
-		activity: ["Activity", "Agent idle", "Skill 2/3", "MCP 2/2", "Status A", "Status B"],
-		usage: ["Usage", "35%/200k", "↑ 4k ↓ 1k", "$ 0.03", "Codex 76%", "Time 20:05"],
+		activity: [
+			"Activity",
+			"Tool bash:test (2s)",
+			"Tool read × 2",
+			"Agent idle",
+			"Skill 2/3",
+			"MCP 2/2",
+			"Status A",
+			"Status B",
+		],
+		usage: ["Usage", "35%/200k", "↑ 4k", "↓ 1k", "$ 0.03", "Codex 76%", "Time 20:05"],
 	});
 });

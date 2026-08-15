@@ -24,8 +24,10 @@ export interface SessionFooterSegments {
 
 export interface ActivityFooterSegments {
 	category: string;
-	tool: string;
-	agent: string;
+	runningTools: string;
+	toolCounts: string;
+	activeAgents: string;
+	agentIdle: string;
 	skills: string;
 	mcp: string;
 	extensions: readonly string[];
@@ -34,7 +36,8 @@ export interface ActivityFooterSegments {
 export interface UsageFooterSegments {
 	category: string;
 	context: string;
-	tokens: string;
+	inputTokens: string;
+	outputTokens: string;
 	cache: string;
 	cost: string;
 	quota: string;
@@ -79,8 +82,10 @@ export function buildCategorizedFooterGroups(
 		]),
 		activity: compact([
 			input.activity.category,
-			input.activity.tool,
-			input.activity.agent,
+			input.activity.runningTools,
+			input.activity.toolCounts,
+			input.activity.activeAgents,
+			input.activity.agentIdle,
 			input.activity.skills,
 			input.activity.mcp,
 			...input.activity.extensions,
@@ -88,7 +93,8 @@ export function buildCategorizedFooterGroups(
 		usage: compact([
 			input.usage.category,
 			input.usage.context,
-			input.usage.tokens,
+			input.usage.inputTokens,
+			input.usage.outputTokens,
 			input.usage.cache,
 			input.usage.cost,
 			input.usage.quota,

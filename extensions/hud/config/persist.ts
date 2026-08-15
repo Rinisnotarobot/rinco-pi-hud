@@ -46,10 +46,12 @@ function isFooterSegmentKey(value: string): value is keyof FooterSegmentsConfig 
 		value === "cwd" ||
 		value === "gitBranch" ||
 		value === "gitStatus" ||
+		value === "gitState" ||
 		value === "gitCounts" ||
 		value === "runtime" ||
 		value === "context" ||
-		value === "tokens" ||
+		value === "inputTokens" ||
+		value === "outputTokens" ||
 		value === "cost" ||
 		value === "sessionDuration" ||
 		value === "username" ||
@@ -67,8 +69,10 @@ function isFooterSegmentKey(value: string): value is keyof FooterSegmentsConfig 
 		value === "configCounts" ||
 		value === "skills" ||
 		value === "mcp" ||
-		value === "toolActivity" ||
-		value === "agentActivity"
+		value === "runningTools" ||
+		value === "toolCounts" ||
+		value === "activeAgents" ||
+		value === "agentIdle"
 	);
 }
 

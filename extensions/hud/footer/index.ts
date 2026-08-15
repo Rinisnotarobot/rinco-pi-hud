@@ -147,6 +147,8 @@ export function installFooter(
 					modelId,
 					thinkingLabel,
 					turnLabel,
+					inputTokensLabel,
+					outputTokensLabel,
 					cacheReadLabel,
 					cacheWriteLabel,
 					cacheHitLabel,
@@ -163,6 +165,7 @@ export function installFooter(
 					toolCountsLabel,
 					runningToolsLabel,
 					activeAgentsLabel,
+					agentIdleLabel,
 				} = buildTelemetryLabels(ctx, state, config, theme, colorSource, mcpStatus);
 				const renderVariable = (name: string): string => {
 					const canonical = FOOTER_FORMAT_ALIASES[name] ?? name;
@@ -337,7 +340,7 @@ export function installFooter(
 						case "running_tools":
 							return runningToolsLabel;
 						case "active_agents":
-							return activeAgentsLabel;
+							return activeAgentsLabel || agentIdleLabel;
 						default:
 							return "";
 					}
@@ -361,8 +364,8 @@ export function installFooter(
 					}
 				}
 				const gitStatusParts = config.footerSegments.gitStatus && statusBlock ? [statusBlock] : [];
-				const showGitState = config.footerSegments.gitBranch || config.footerSegments.gitStatus;
-				const gitStateParts = showGitState && gitStateBlock ? [gitStateBlock] : [];
+				const gitStateParts =
+					config.footerSegments.gitState && gitStateBlock ? [gitStateBlock] : [];
 				const branchLabel = [...branchParts, ...gitStatusParts, ...gitStateParts]
 					.filter(Boolean)
 					.join(" ");
@@ -507,8 +510,10 @@ export function installFooter(
 					},
 					activity: {
 						category: activityCategoryLabel,
-						tool: config.footerSegments.toolActivity ? runningToolsLabel || toolCountsLabel : "",
-						agent: config.footerSegments.agentActivity ? activeAgentsLabel : "",
+						runningTools: config.footerSegments.runningTools ? runningToolsLabel : "",
+						toolCounts: config.footerSegments.toolCounts ? toolCountsLabel : "",
+						activeAgents: config.footerSegments.activeAgents ? activeAgentsLabel : "",
+						agentIdle: config.footerSegments.agentIdle ? agentIdleLabel : "",
 						skills: config.footerSegments.skills ? skillsLabel : "",
 						mcp: config.footerSegments.mcp ? mcpLabel : "",
 						extensions: [...extensionLeft, ...extensionMiddle, ...extensionRight],
@@ -518,9 +523,8 @@ export function installFooter(
 						context: config.footerSegments.context
 							? renderStyleForSource(theme, colorSource, contextColor, contextLabel)
 							: "",
-						tokens: config.footerSegments.tokens
-							? renderStyleForSource(theme, colorSource, config.colors.tokens, state.tokenLabel)
-							: "",
+						inputTokens: config.footerSegments.inputTokens ? inputTokensLabel : "",
+						outputTokens: config.footerSegments.outputTokens ? outputTokensLabel : "",
 						cache: config.footerSegments.cacheDetails ? cacheDetailsLabel : "",
 						cost: config.footerSegments.cost
 							? renderStyleForSource(theme, colorSource, config.colors.cost, state.costLabel)

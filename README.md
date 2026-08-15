@@ -16,13 +16,14 @@ Rinco Pi HUD provides a rich, real-time status footer for Pi TUI sessions. It di
 
 ## Features
 
-- **Project state** — Working directory, Git branch, commit, tag, status, diff metrics, and runtime versions.
-- **Session activity** — Model, provider, context usage, tokens, cache, session cost, turn count, and thinking level.
-- **Tool and agent activity** — Native tool completion counts, running tools, active agent runs, skills, and MCP server status.
+- **Project state** — Working directory, Git branch, commit, tag, status, operation state, diff metrics, and runtime versions.
+- **Session activity** — Model, provider, context usage, independently controlled input/output tokens, cache, session cost, turn count, and thinking level.
+- **Tool and agent activity** — Independent controls for running tools, completed tool counts, active agents, idle state, skills, and MCP server status.
 - **Model quota** — Automatic Codex weekly quota or Token Switch balance display by model provider.
 - **Git awareness** — Branches, detached HEAD, tags, ahead/behind, stash, merge/rebase conflicts, and dirty state.
 - **Runtime detection** — Node, Python, Go, Rust, Java, and 60+ other runtimes with package version parsing.
 - **Configurable layout** — Responsive Project, Session, Activity, and Usage groups by default, or fully customizable single-line templates.
+- **Granular status controls** — Toggle Git operation state, tool runtime/counts, active/idle agents, and input/output tokens separately from `/zentui`.
 - **Extension statuses** — Reads third-party extension statuses and places them by configurable position and color mode.
 - **Safe fallback** — Graceful timeout and error handling; no stale data after session shutdown.
 
@@ -82,18 +83,18 @@ The HUD footer is enabled by default. Run `/zentui` to open the interactive sett
 
 | Path | Purpose |
 | --- | --- |
-| [`extensions/hud/index.ts`](extensions/hud/index.ts) | Extension lifecycle and side-effect orchestration |
-| [`extensions/hud/config/`](extensions/hud/config/config.ts) | Configuration model, normalization, and persistence |
-| [`extensions/hud/footer/`](extensions/hud/footer/index.ts) | Footer rendering, categorized layout, and template parsing |
+| [`extensions/hud/index.ts`](extensions/hud/index.ts) | Composition root for controllers, shared state, and UI installation |
+| [`extensions/hud/config/`](extensions/hud/config/config.ts) | Configuration model, normalization, migration, and persistence |
+| [`extensions/hud/footer/`](extensions/hud/footer/index.ts) | Footer rendering, semantic grouping, responsive layout, and template parsing |
 | [`extensions/hud/segments/`](extensions/hud/segments/) | State collectors: Git, runtime, MCP, skills, projects, etc. |
 | [`extensions/hud/telemetry/`](extensions/hud/telemetry/format.ts) | Usage formatting, token switch, and Codex subscription client |
-| [`extensions/hud/session/`](extensions/hud/session/) | Session lifecycle, context, and live context overlay |
-| [`extensions/hud/state/`](extensions/hud/state/) | Aggregated state, telemetry, and project refresh |
-| [`extensions/hud/commands/`](extensions/hud/commands/settings.ts) | `/zentui` command and interactive TUI settings |
+| [`extensions/hud/session/`](extensions/hud/session/) | Pi event registration, session lifecycle, and live context overlay |
+| [`extensions/hud/state/`](extensions/hud/state/) | Aggregated state, telemetry reducer, and project refresh controller |
+| [`extensions/hud/commands/`](extensions/hud/commands/settings.ts) | `/zentui` settings UI and configuration controller |
 | [`extensions/hud/ui/`](extensions/hud/ui/) | Icons and terminal style utilities |
 | [`docs/footer.md`](docs/footer.md) | Complete footer configuration reference |
 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Local development, testing guidance, and pull request checklist |
-| [`tests/`](tests/) | Vitest test suite (34+ tests across 6 files) |
+| [`tests/`](tests/) | Vitest test suite (41 tests across 8 files) |
 
 ## Customization
 
@@ -109,13 +110,16 @@ Template variables use `$name` or `${name}` syntax. See the [footer reference](d
 
 ### Segments
 
-Enable or disable individual status segments via `/zentui`:
+Open `/zentui`, then select **Built-in segments** to enable or disable individual statuses. Fine-grained controls include:
 
-```text
-/zentui statusline enable
-/zentui statusline disable
-/zentui statusline toggle
-```
+| Group | Independently controlled statuses |
+| --- | --- |
+| Project | Git status, Git operation state (`MERGING`, `REBASING`, etc.), commit, metrics, runtime, package, OS, and user |
+| Session | Model, thinking level, turn count, and duration |
+| Activity | Running tools, completed tool counts, active agents, `Agent idle`, skills, and MCP |
+| Usage | Context, input tokens, output tokens, cache details/hit rate, cost, quota, and time |
+
+Existing configs using the former aggregate `tokens`, `toolActivity`, or `agentActivity` switches are migrated automatically. The whole footer can still be controlled with `/zentui statusline enable|disable|toggle`.
 
 ### Extension statuses
 

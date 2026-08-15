@@ -113,7 +113,7 @@ test("telemetry labels use the four English groups and readable activity labels"
 		{ model: { provider: "openai-codex", id: "gpt-5.3" } } as never,
 		{
 			telemetry,
-			usageTotals: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 },
+			usageTotals: { input: 4200, output: 1100, cacheRead: 0, cacheWrite: 0, cost: 0 },
 			configCounts: {
 				instructionFiles: { agentsMd: 0, claudeMd: 0, total: 0 },
 				packages: 0,
@@ -138,7 +138,10 @@ test("telemetry labels use the four English groups and readable activity labels"
 	assert.equal(labels.thinkingLabel, "Thinking level: medium");
 	assert.equal(labels.turnLabel, "Turn 4");
 	assert.equal(labels.toolCountsLabel, "Tool read");
-	assert.equal(labels.activeAgentsLabel, "Agent idle");
+	assert.equal(labels.activeAgentsLabel, "");
+	assert.equal(labels.agentIdleLabel, "Agent idle");
+	assert.equal(labels.inputTokensLabel, "↑ 4.2k");
+	assert.equal(labels.outputTokensLabel, "↓ 1.1k");
 	assert.equal(labels.skillsLabel, "Skill 2/3");
 	assert.equal(labels.mcpLabel, "MCP 2/2");
 });

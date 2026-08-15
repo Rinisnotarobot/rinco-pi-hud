@@ -113,6 +113,7 @@ const footerSegmentSettingLabels: Record<FooterSegmentSettingId, string> = {
 	cwd: "Current directory",
 	gitBranch: "Git branch",
 	gitStatus: "Git status",
+	gitState: "Git operation state",
 	gitCounts: "Git counts",
 	gitCommit: "Git commit",
 	gitMetrics: "Git line metrics",
@@ -126,12 +127,15 @@ const footerSegmentSettingLabels: Record<FooterSegmentSettingId, string> = {
 	thinking: "Thinking level",
 	turnCount: "Turn count",
 	sessionDuration: "Session duration",
-	toolActivity: "Tool activity",
-	agentActivity: "Agent run activity",
+	runningTools: "Running tools",
+	toolCounts: "Completed tool counts",
+	activeAgents: "Active agents",
+	agentIdle: "Agent idle status",
 	skills: "Skill activity",
 	mcp: "MCP connections",
 	context: "Context usage",
-	tokens: "Token counts",
+	inputTokens: "Input tokens",
+	outputTokens: "Output tokens",
 	cacheDetails: "Cache details",
 	cost: "Session cost",
 	codexUsage: "Codex subscription",
@@ -142,6 +146,7 @@ const footerSegmentSettingDescriptions: Record<FooterSegmentSettingId, string> =
 	cwd: "Show or hide the current working directory on the project row.",
 	gitBranch: "Show or hide the git branch name on the project row.",
 	gitStatus: "Show or hide git status icons and ahead/behind markers on the project row.",
+	gitState: "Show or hide Git operation states such as MERGING and REBASING.",
 	gitCounts:
 		"Show numeric ahead/behind and stash counts (requires the Git status segment to be enabled).",
 	sessionDuration: "Show session running time on the session row.",
@@ -150,7 +155,8 @@ const footerSegmentSettingDescriptions: Record<FooterSegmentSettingId, string> =
 	os: "Show an operating-system icon on the project row.",
 	runtime: "Show or hide the detected runtime/language on the project row.",
 	context: "Show or hide context usage on the usage row.",
-	tokens: "Show or hide input/output token counts on the usage row.",
+	inputTokens: "Show or hide cumulative input tokens on the usage row.",
+	outputTokens: "Show or hide cumulative output tokens on the usage row.",
 	cost: "Show or hide session cost on the usage row.",
 	packageVersion:
 		"Show the project’s own manifest version (package.json, Cargo.toml, pyproject.toml, …) on the project row. Distinct from the installed toolchain version.",
@@ -167,8 +173,10 @@ const footerSegmentSettingDescriptions: Record<FooterSegmentSettingId, string> =
 	configCounts: "Show instruction-file and installed Pi package counts on the project row.",
 	skills: "Show active/available Pi skill counts on the activity row.",
 	mcp: "Show parsed MCP connected/total server counts on the activity row.",
-	toolActivity: "Show completed or running native tools on the activity row.",
-	agentActivity: "Show active main agent runs on the activity row (not subagent count).",
+	runningTools: "Show currently running native tools and their elapsed time.",
+	toolCounts: "Show cumulative completed native-tool counts.",
+	activeAgents: "Show active main agent runs on the activity row (not subagent count).",
+	agentIdle: "Show Agent idle when no main agent run is active.",
 };
 
 const directCommandSuggestions = [
@@ -209,11 +217,13 @@ function isFooterSegmentSettingId(value: string): value is FooterSegmentSettingI
 		value === "cwd" ||
 		value === "gitBranch" ||
 		value === "gitStatus" ||
+		value === "gitState" ||
 		value === "gitCounts" ||
 		value === "sessionDuration" ||
 		value === "runtime" ||
 		value === "context" ||
-		value === "tokens" ||
+		value === "inputTokens" ||
+		value === "outputTokens" ||
 		value === "cost" ||
 		value === "username" ||
 		value === "time" ||
@@ -230,8 +240,10 @@ function isFooterSegmentSettingId(value: string): value is FooterSegmentSettingI
 		value === "configCounts" ||
 		value === "skills" ||
 		value === "mcp" ||
-		value === "toolActivity" ||
-		value === "agentActivity"
+		value === "runningTools" ||
+		value === "toolCounts" ||
+		value === "activeAgents" ||
+		value === "agentIdle"
 	);
 }
 
