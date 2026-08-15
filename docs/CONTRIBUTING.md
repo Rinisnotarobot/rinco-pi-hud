@@ -88,18 +88,27 @@ The HUD extension is organized into functional modules under `extensions/hud/`:
 - **`session/`** — Pi event registration, lifecycle generations, and live-context throttling.
 - **`state/`** — Shared footer state, telemetry reducer, and project-refresh controller.
 - **`telemetry/`** — Usage formatting, token switch, and Codex subscription client.
-- **`session/`** — Session lifecycle, context, and live context overlay.
-- **`state/`** — Aggregated state, telemetry, and project refresh.
-- **`commands/`** — `/zentui` command and interactive TUI settings.
 - **`ui/`** — Icons and terminal style utilities.
 
 Key conventions:
 
-- Keep event listeners and side-effects in `index.ts`; do not read files or spawn processes in `render()`.
+- Keep composition in `index.ts`, Pi event listeners in `session/event-handlers.ts`, and avoid file reads or subprocesses in `render()`.
 - Async results check session generation before applying.
 - Timers should be cleaned up on shutdown and `unref()` where possible.
 - State collectors return explicit `ok` / `error` / `not found` semantics.
 - Use `visibleWidth()` and `truncateToWidth()` for terminal width calculations.
+
+## Releases
+
+npm releases use GitHub Trusted Publishing through `.github/workflows/publish.yml`; no `NPM_TOKEN` repository secret is required. The workflow has narrowly scoped `id-token: write` permission, verifies the package, and publishes with provenance.
+
+1. Update the same version in `package.json` and `package-lock.json`.
+2. Commit and push the release changes to `main`.
+3. Create an annotated tag that exactly matches the package version, for example `git tag -a v1.1.0 -m "v1.1.0"`.
+4. Push the tag with `git push origin v1.1.0`.
+5. Confirm the **Publish npm package** workflow succeeds and verify the version on npm.
+
+The tag/version guard fails the workflow before publication if they do not match.
 
 ## Pull request checklist
 
