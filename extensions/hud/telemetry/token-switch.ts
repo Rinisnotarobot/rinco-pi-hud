@@ -13,9 +13,7 @@ type QueryTokenSwitchBalanceOptions = {
 	signal?: AbortSignal;
 };
 
-export function isTokenSwitchModel(
-	model: Pick<TokenSwitchModel, "provider"> | undefined,
-): boolean {
+export function isTokenSwitchModel(model: Pick<TokenSwitchModel, "provider"> | undefined): boolean {
 	return model?.provider === TOKEN_SWITCH_PROVIDER_ID;
 }
 
@@ -92,10 +90,7 @@ export async function queryTokenSwitchBalance({
 	};
 
 	try {
-		const subscriptionPayload = await fetchPayload(
-			TOKEN_SWITCH_SUBSCRIPTION_URL,
-			"subscription",
-		);
+		const subscriptionPayload = await fetchPayload(TOKEN_SWITCH_SUBSCRIPTION_URL, "subscription");
 		const usagePayload = await fetchPayload(TOKEN_SWITCH_USAGE_URL, "usage");
 		return parseTokenSwitchBalance(subscriptionPayload, usagePayload);
 	} catch (error) {

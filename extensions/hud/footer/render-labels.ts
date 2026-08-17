@@ -27,12 +27,9 @@ export function safeStatusText(value: string | null | undefined, maxLength = 256
 export type SanitizedFooterInputs = {
 	safeCwd: string;
 	safeRuntime:
-		| { name: string; symbol: string; style: string; version: string | undefined }
-		| undefined;
+		{ name: string; symbol: string; style: string; version: string | undefined } | undefined;
 	safePackageVersion: { ecosystem: string; version: string } | undefined;
-	safeCommit:
-		| { oid: string | null; detached: boolean; tag: string | null }
-		| undefined;
+	safeCommit: { oid: string | null; detached: boolean; tag: string | null } | undefined;
 };
 
 /** Sanitize the state/ctx fields that flow into the terminal so a malicious
@@ -178,13 +175,19 @@ export function buildTelemetryLabels(
 	const usageCategoryLabel = statusStyle(config.colors.contextNormal, "Usage");
 
 	const sessionName = safeStatusText(state.telemetry.sessionName, 256);
-	const sessionNameLabel = statusStyle(config.colors.gitBranch, sessionName ? `◈ ${sessionName}` : "");
+	const sessionNameLabel = statusStyle(
+		config.colors.gitBranch,
+		sessionName ? `◈ ${sessionName}` : "",
+	);
 
 	const providerId = safeStatusText(ctx.model?.provider, 128);
 	const modelId = safeStatusText(ctx.model?.id, 256);
 	const modelText = providerId && modelId ? `${providerId}/${modelId}` : modelId || providerId;
 	const modelValueLabel = statusStyle(config.colors.runtimePrefix, modelText);
-	const modelStatusLabel = statusStyle(config.colors.runtimePrefix, modelText ? `λ ${modelText}` : "");
+	const modelStatusLabel = statusStyle(
+		config.colors.runtimePrefix,
+		modelText ? `λ ${modelText}` : "",
+	);
 
 	const thinkingLabel = state.telemetry.modelSupportsReasoning
 		? statusStyle(config.colors.extensionStatus, `Thinking level: ${state.telemetry.thinkingLevel}`)

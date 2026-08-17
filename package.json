@@ -30,11 +30,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint --write .",
-    "format:check": "biome format .",
-    "format": "biome format --write .",
-    "verify": "npm run typecheck && npm run lint && npm run test",
+    "lint": "eslint extensions tests",
+    "lint:fix": "eslint extensions tests --fix",
+    "format:check": "prettier --check \"extensions/**/*.ts\" \"tests/**/*.ts\" \"eslint.config.js\" \"prettier.config.js\"",
+    "format": "prettier --write \"extensions/**/*.ts\" \"tests/**/*.ts\" \"eslint.config.js\" \"prettier.config.js\"",
+    "verify": "npm run format:check && npm run typecheck && npm run lint && npm run test",
     "pack:check": "npm pack --dry-run"
   },
   "peerDependencies": {
@@ -47,10 +47,14 @@
     ]
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.7",
     "@earendil-works/pi-ai": "^0.83.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.12.4",
+    "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.67.0",
     "vitest": "^4.1.9"
   }
 }

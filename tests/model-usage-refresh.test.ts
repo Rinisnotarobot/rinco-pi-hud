@@ -42,10 +42,7 @@ it("forces a status refresh whenever /model selects a model", async () => {
 		await waitFor(() => requestCount === 2);
 		await waitFor(() => statuses.at(-1) === "token-switch $9.00");
 
-		handlers.get("model_select")?.(
-			{ model, previousModel: model, source: "set" },
-			ctx,
-		);
+		handlers.get("model_select")?.({ model, previousModel: model, source: "set" }, ctx);
 		await waitFor(() => requestCount === 4);
 		await waitFor(() => statuses.at(-1) === "token-switch $9.00");
 	} finally {
@@ -102,7 +99,10 @@ it("refreshes the Token Switch balance via /usage-refresh without a Codex query"
 	}
 
 	// Only the billing endpoints are hit; the balance survives and no Codex report appears.
-	assert.equal(requestedUrls.every((url) => url.includes("/dashboard/billing/")), true);
+	assert.equal(
+		requestedUrls.every((url) => url.includes("/dashboard/billing/")),
+		true,
+	);
 	assert.equal(balanceAfterRefresh, "token-switch $9.00");
 	assert.equal(notifications.length, 0);
 });

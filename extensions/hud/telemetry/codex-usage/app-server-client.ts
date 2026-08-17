@@ -63,7 +63,8 @@ class CodexAppServerClient {
 
 	start(): Promise<void> {
 		if (this.startPromise) return this.startPromise;
-		if (this.signal?.aborted) return Promise.reject(new Error("Codex app-server query was cancelled."));
+		if (this.signal?.aborted)
+			return Promise.reject(new Error("Codex app-server query was cancelled."));
 		this.signal?.addEventListener("abort", this.abortHandler, { once: true });
 
 		this.startPromise = new Promise((resolve, reject) => {
@@ -100,7 +101,10 @@ class CodexAppServerClient {
 
 			child.stderr.setEncoding("utf8");
 			child.stderr.on("data", (chunk: string) => {
-				this.stderr = truncateEnd(`${this.stderr}${chunk.slice(0, MAX_ERROR_BODY_CHARS)}`, MAX_ERROR_BODY_CHARS);
+				this.stderr = truncateEnd(
+					`${this.stderr}${chunk.slice(0, MAX_ERROR_BODY_CHARS)}`,
+					MAX_ERROR_BODY_CHARS,
+				);
 			});
 			child.stderr.on("error", () => undefined);
 			child.stdin.on("error", (error) => this.rejectAll(error));

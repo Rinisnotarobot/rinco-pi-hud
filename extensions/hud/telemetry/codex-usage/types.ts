@@ -17,8 +17,7 @@ export type CachedReport = {
 };
 
 export type QueryUsageResult =
-	| { ok: true; report: CodexUsageReport }
-	| { ok: false; errors: UsageQueryError[] };
+	{ ok: true; report: CodexUsageReport } | { ok: false; errors: UsageQueryError[] };
 
 export type UsageQueryError = {
 	source: UsageSource;

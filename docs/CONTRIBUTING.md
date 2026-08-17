@@ -39,10 +39,11 @@ Pi loads the TypeScript extension directly, so this project has no separate buil
 Before submitting a change, run:
 
 ```bash
-npm test
-npm run typecheck
+npm run verify
 npm run pack:check
 ```
+
+`npm run verify` checks Prettier formatting, TypeScript types, ESLint rules, and the Vitest suite.
 
 Tests live in `tests/`:
 
@@ -68,10 +69,19 @@ In addition to automated tests, validate HUD behavior in a real Pi TUI across di
 
 ## Code style
 
-The project currently has no configured linter, formatter, or pre-commit hook. Follow the existing conventions:
+The project uses ESLint for code-quality checks and Prettier for deterministic formatting:
+
+```bash
+npm run lint
+npm run lint:fix
+npm run format:check
+npm run format
+```
+
+Follow the configured conventions:
 
 - Use TypeScript ESM and explicit types.
-- Use two-space indentation, double quotes, and semicolons.
+- Use tab indentation, double quotes, and semicolons.
 - Keep extension lifecycle handling clear and release timers and UI state during `session_shutdown`.
 - Do not edit content enclosed by `AUTO-GENERATED` markers manually; regenerate it from the source identified in the marker.
 
@@ -117,8 +127,7 @@ Before opening a pull request, confirm that:
 
 - [ ] The change has a focused scope and contains no unrelated files.
 - [ ] New behavior or bug fixes include appropriate tests.
-- [ ] `npm test` passes.
-- [ ] `npm run typecheck` passes.
+- [ ] `npm run verify` passes (format, types, lint, and tests).
 - [ ] `npm run pack:check` passes and the package contains the expected files.
 - [ ] Affected HUD behavior was verified in a real Pi TUI.
 - [ ] Related documentation was synchronized from its source of truth.

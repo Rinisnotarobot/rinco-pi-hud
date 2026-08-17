@@ -41,8 +41,7 @@ export type PackageVersionResult = {
 };
 
 export type PackageVersionReadResult =
-	| { kind: "ok"; result: PackageVersionResult | null }
-	| { kind: "error" };
+	{ kind: "ok"; result: PackageVersionResult | null } | { kind: "error" };
 
 /**
  * A single manifest source. `kind` selects the lookup mode:

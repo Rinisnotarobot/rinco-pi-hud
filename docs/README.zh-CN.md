@@ -176,11 +176,10 @@ npm test
 npm run typecheck
 ```
 
-验证测试与发布内容：
+验证格式、类型、Lint、测试与发布内容：
 
 ```bash
-npm test
-npm run typecheck
+npm run verify
 npm run pack:check
 ```
 

@@ -18,7 +18,8 @@ export function parseMcpStatus(text: string | undefined): McpStatus | undefined 
 	const total = Number(enabledMatch ? enabledMatch[1] : legacyMatch![2]);
 	const disabled = enabledMatch?.[3] === undefined ? 0 : Number(enabledMatch[3]);
 	if (![connected, total, disabled].every(Number.isSafeInteger)) return undefined;
-	if (connected < 0 || total < 0 || connected > total || total > 10_000 || disabled > 10_000) return undefined;
+	if (connected < 0 || total < 0 || connected > total || total > 10_000 || disabled > 10_000)
+		return undefined;
 	return { connected, total };
 }
 

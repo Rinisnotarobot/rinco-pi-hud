@@ -65,20 +65,12 @@ type FeatureSettingId = keyof UiFeaturesConfig;
 type FooterSegmentSettingId = keyof FooterSegmentsConfig;
 type SettingsSection = (typeof settingsSections)[number];
 type LayoutSettingId =
-	| "contextStyle"
-	| "separator"
-	| "pathDisplay"
-	| "pathDepth"
-	| "branchLength"
-	| "iconMode";
+	"contextStyle" | "separator" | "pathDisplay" | "pathDepth" | "branchLength" | "iconMode";
 
 type SettingsCommandDeps = {
 	getConfig: () => PolishedTuiConfig;
 	setColorSources: (patch: Partial<ColorSourcesConfig>) => void;
-	setUiFeatures: (
-		patch: Partial<UiFeaturesConfig>,
-		ctx: ExtensionContext,
-	) => void;
+	setUiFeatures: (patch: Partial<UiFeaturesConfig>, ctx: ExtensionContext) => void;
 	setFooterRows: (patch: Partial<FooterRowsConfig>) => void;
 	setFooterSegments: (patch: Partial<FooterSegmentsConfig>) => void;
 	setFooterFormat: (value: string) => void;
@@ -364,9 +356,8 @@ function parseDirectFeatureCommand(
 
 	const words = normalized.split(/\s+/g).filter(Boolean);
 	const hasWord = (value: string) => words.includes(value);
-	const feature = hasWord("footer") || hasWord("statusline") || hasWord("status")
-		? "statusLine"
-		: undefined;
+	const feature =
+		hasWord("footer") || hasWord("statusline") || hasWord("status") ? "statusLine" : undefined;
 	const action = hasWord("toggle")
 		? "toggle"
 		: hasWord("enable") || hasWord("enabled") || hasWord("on")

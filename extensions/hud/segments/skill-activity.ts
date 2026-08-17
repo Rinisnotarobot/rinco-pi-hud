@@ -119,7 +119,11 @@ export class SkillActivityTracker {
 				}
 				continue;
 			}
-			if (message.role !== "toolResult" || message.toolName !== "read" || message.isError === true) {
+			if (
+				message.role !== "toolResult" ||
+				message.toolName !== "read" ||
+				message.isError === true
+			) {
 				continue;
 			}
 			const id = typeof message.toolCallId === "string" ? message.toolCallId : undefined;

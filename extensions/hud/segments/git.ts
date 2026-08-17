@@ -7,11 +7,7 @@ const execFileAsync = promisify(execFile);
 const GIT_COMMAND_TIMEOUT_MS = 2_000;
 
 export type GitOperationState =
-	| "REBASING"
-	| "MERGING"
-	| "CHERRY-PICKING"
-	| "REVERTING"
-	| "BISECTING";
+	"REBASING" | "MERGING" | "CHERRY-PICKING" | "REVERTING" | "BISECTING";
 
 /**
  * Starship `git_commit`-style info derived from the existing porcelain probe.
@@ -57,9 +53,7 @@ export type GitStatusSummary = {
 };
 
 export type GitReadResult =
-	| { kind: "ok"; status: GitStatusSummary }
-	| { kind: "not_a_repo" }
-	| { kind: "error" };
+	{ kind: "ok"; status: GitStatusSummary } | { kind: "not_a_repo" } | { kind: "error" };
 
 export type GitStatePaths = {
 	rebaseMerge?: string;

@@ -46,7 +46,7 @@ export type TelemetryUpdate =
 			name: string;
 			args?: Record<string, unknown> | null;
 			at: number;
-		}
+	  }
 	| { type: "tool-result"; toolCallId: string; isError: boolean; at: number }
 	| { type: "agent-start"; at: number }
 	| { type: "agent-end"; at: number };
@@ -80,7 +80,9 @@ function normalizeThinkingLevel(value: string | undefined): string {
 
 export function createTelemetryState(initial: TelemetryInitialValues = {}): TelemetryState {
 	return {
-		sessionName: initial.sessionName ? sanitizeExternalText(initial.sessionName) || undefined : undefined,
+		sessionName: initial.sessionName
+			? sanitizeExternalText(initial.sessionName) || undefined
+			: undefined,
 		turnIndex: initial.turnIndex ?? 0,
 		thinkingLevel: normalizeThinkingLevel(initial.thinkingLevel),
 		modelSupportsReasoning: initial.modelSupportsReasoning ?? false,
@@ -118,11 +120,12 @@ export function findToolTarget(state: TelemetryState, toolCallId: string): strin
 
 function getToolTarget(args: Record<string, unknown> | null | undefined): string | undefined {
 	if (!args) return undefined;
-	const value = typeof args.path === "string"
-		? args.path
-		: typeof args.filePath === "string"
-			? args.filePath
-			: undefined;
+	const value =
+		typeof args.path === "string"
+			? args.path
+			: typeof args.filePath === "string"
+				? args.filePath
+				: undefined;
 	return value === undefined ? undefined : sanitizeToolTarget(value);
 }
 
@@ -205,7 +208,10 @@ function finishLatestAgentRun(state: TelemetryState, at: number): TelemetryState
 	return { ...state, agentRuns };
 }
 
-export function updateTelemetryState(state: TelemetryState, update: TelemetryUpdate): TelemetryState {
+export function updateTelemetryState(
+	state: TelemetryState,
+	update: TelemetryUpdate,
+): TelemetryState {
 	switch (update.type) {
 		case "metadata":
 			return updateMetadata(state, update);

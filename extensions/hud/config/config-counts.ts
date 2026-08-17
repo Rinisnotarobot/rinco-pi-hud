@@ -35,11 +35,12 @@ function getPiAgentDir(): string {
 function resolveAgentDir(options: ConfigCountOptions): string {
 	let agentDir = "";
 	try {
-		agentDir = typeof options.agentDir === "string"
-			? options.agentDir
-			: options.getAgentDir
-				? options.getAgentDir()
-				: getPiAgentDir();
+		agentDir =
+			typeof options.agentDir === "string"
+				? options.agentDir
+				: options.getAgentDir
+					? options.getAgentDir()
+					: getPiAgentDir();
 	} catch {
 		return "";
 	}

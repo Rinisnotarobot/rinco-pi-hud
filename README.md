@@ -176,11 +176,10 @@ Check types:
 npm run typecheck
 ```
 
-Verify tests and package contents:
+Verify formatting, types, lint rules, tests, and package contents:
 
 ```bash
-npm test
-npm run typecheck
+npm run verify
 npm run pack:check
 ```
 

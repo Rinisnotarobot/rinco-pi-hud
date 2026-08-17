@@ -160,7 +160,7 @@ test("tool history trims from 501 entries to the most recent 400", () => {
 
 test("telemetry summary counts only completed whitelisted tools and returns two latest running tools", () => {
 	let state = createTelemetryState();
-	for (const [index, name] of ["read", "custom", "bash", "grep"] .entries()) {
+	for (const [index, name] of ["read", "custom", "bash", "grep"].entries()) {
 		state = updateTelemetryState(state, {
 			type: "tool-call",
 			toolCallId: `${name}-${index}`,
@@ -168,8 +168,18 @@ test("telemetry summary counts only completed whitelisted tools and returns two 
 			at: index,
 		});
 	}
-	state = updateTelemetryState(state, { type: "tool-result", toolCallId: "read-0", isError: false, at: 10 });
-	state = updateTelemetryState(state, { type: "tool-result", toolCallId: "custom-1", isError: false, at: 11 });
+	state = updateTelemetryState(state, {
+		type: "tool-result",
+		toolCallId: "read-0",
+		isError: false,
+		at: 10,
+	});
+	state = updateTelemetryState(state, {
+		type: "tool-result",
+		toolCallId: "custom-1",
+		isError: false,
+		at: 11,
+	});
 
 	const summary = getTelemetryStats(state);
 	assert.deepEqual(summary.completedToolCounts, {
@@ -181,7 +191,10 @@ test("telemetry summary counts only completed whitelisted tools and returns two 
 		ls: 0,
 		find: 0,
 	});
-	assert.deepEqual(summary.recentRunningTools.map(({ toolCallId }) => toolCallId), ["bash-2", "grep-3"]);
+	assert.deepEqual(
+		summary.recentRunningTools.map(({ toolCallId }) => toolCallId),
+		["bash-2", "grep-3"],
+	);
 });
 
 test("agent end completes the most recently started running agent", () => {
@@ -204,11 +217,14 @@ test("agent end completes the most recently started running agent", () => {
 test("skill activity tracks distinct available and activated skills", () => {
 	const cwd = "/workspace/project";
 	const tracker = new SkillActivityTracker();
-	tracker.syncAvailable([
-		{ name: "alpha", filePath: `${cwd}/.agents/skills/alpha/SKILL.md` },
-		{ name: "beta", filePath: `${cwd}/.agents/skills/beta/SKILL.md` },
-		{ name: "alpha", filePath: `${cwd}/duplicate/SKILL.md` },
-	], cwd);
+	tracker.syncAvailable(
+		[
+			{ name: "alpha", filePath: `${cwd}/.agents/skills/alpha/SKILL.md` },
+			{ name: "beta", filePath: `${cwd}/.agents/skills/beta/SKILL.md` },
+			{ name: "alpha", filePath: `${cwd}/duplicate/SKILL.md` },
+		],
+		cwd,
+	);
 
 	assert.deepEqual(tracker.counts(), { total: 2, active: 0 });
 	assert.equal(tracker.activateFromRead("@.agents/skills/alpha/SKILL.md", cwd), true);
@@ -230,35 +246,59 @@ test("skill activity restores successful reads and explicit skill prompts from a
 	const cwd = "/workspace/project";
 	const skillPath = (name: string) => `${cwd}/skills/${name}/SKILL.md`;
 	const tracker = new SkillActivityTracker();
-	tracker.syncAvailable(["alpha", "beta", "gamma"].map((name) => ({
-		name,
-		filePath: skillPath(name),
-	})), cwd);
+	tracker.syncAvailable(
+		["alpha", "beta", "gamma"].map((name) => ({
+			name,
+			filePath: skillPath(name),
+		})),
+		cwd,
+	);
 
-	tracker.restoreFromEntries([
-		{
-			type: "message",
-			message: {
-				role: "assistant",
-				content: [
-					{ type: "toolCall", id: "read-alpha", name: "read", arguments: { path: skillPath("alpha") } },
-					{ type: "toolCall", id: "read-beta", name: "read", arguments: { path: skillPath("beta") } },
-				],
+	tracker.restoreFromEntries(
+		[
+			{
+				type: "message",
+				message: {
+					role: "assistant",
+					content: [
+						{
+							type: "toolCall",
+							id: "read-alpha",
+							name: "read",
+							arguments: { path: skillPath("alpha") },
+						},
+						{
+							type: "toolCall",
+							id: "read-beta",
+							name: "read",
+							arguments: { path: skillPath("beta") },
+						},
+					],
+				},
 			},
-		},
-		{ type: "message", message: { role: "toolResult", toolCallId: "read-alpha", toolName: "read", isError: false } },
-		{ type: "message", message: { role: "toolResult", toolCallId: "read-beta", toolName: "read", isError: true } },
-		{
-			type: "message",
-			message: {
-				role: "user",
-				content: [{
-					type: "text",
-					text: `<skill name="gamma" location="${skillPath("gamma")}">\nbody\n</skill>`,
-				}],
+			{
+				type: "message",
+				message: { role: "toolResult", toolCallId: "read-alpha", toolName: "read", isError: false },
 			},
-		},
-	], cwd);
+			{
+				type: "message",
+				message: { role: "toolResult", toolCallId: "read-beta", toolName: "read", isError: true },
+			},
+			{
+				type: "message",
+				message: {
+					role: "user",
+					content: [
+						{
+							type: "text",
+							text: `<skill name="gamma" location="${skillPath("gamma")}">\nbody\n</skill>`,
+						},
+					],
+				},
+			},
+		],
+		cwd,
+	);
 
 	assert.deepEqual(tracker.counts(), { total: 3, active: 2 });
 });
@@ -278,10 +318,13 @@ test("config counts tolerate missing files and use a custom agent directory", as
 			instructionFiles: { agentsMd: 1, claudeMd: 1, total: 2 },
 			packages: 2,
 		});
-		assert.deepEqual(countConfigEntries(join(root, "missing-project"), { agentDir: join(root, "missing-agent") }), {
-			instructionFiles: { agentsMd: 0, claudeMd: 0, total: 0 },
-			packages: 0,
-		});
+		assert.deepEqual(
+			countConfigEntries(join(root, "missing-project"), { agentDir: join(root, "missing-agent") }),
+			{
+				instructionFiles: { agentsMd: 0, claudeMd: 0, total: 0 },
+				packages: 0,
+			},
+		);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
@@ -332,10 +375,16 @@ test("package versions reject terminal controls and oversized values", () => {
 });
 
 test("MCP status parser supports current enabled and legacy fraction formats", () => {
-	assert.deepEqual(parseMcpStatus("🔌 MCP: 3 servers enabled (2 connected)"), { connected: 2, total: 3 });
+	assert.deepEqual(parseMcpStatus("🔌 MCP: 3 servers enabled (2 connected)"), {
+		connected: 2,
+		total: 3,
+	});
 	assert.deepEqual(parseMcpStatus("🔌 MCP: 3 servers enabled"), { connected: 0, total: 3 });
 	assert.deepEqual(parseMcpStatus("🔌 MCP: 1 server enabled"), { connected: 0, total: 1 });
-	assert.deepEqual(parseMcpStatus("🔌 MCP: 2 servers enabled (1 disabled)"), { connected: 0, total: 2 });
+	assert.deepEqual(parseMcpStatus("🔌 MCP: 2 servers enabled (1 disabled)"), {
+		connected: 0,
+		total: 2,
+	});
 	assert.deepEqual(parseMcpStatus("🔌 MCP: 2 servers enabled (1 connected) (1 disabled)"), {
 		connected: 1,
 		total: 2,
@@ -344,8 +393,14 @@ test("MCP status parser supports current enabled and legacy fraction formats", (
 		connected: 4,
 		total: 12,
 	});
-	assert.deepEqual(parseMcpStatus("\u001b[36mMCP:\u001b[0m 2/3 servers"), { connected: 2, total: 3 });
-	assert.deepEqual(parseMcpStatus("prefix MCP: 0 / 12 servers suffix"), { connected: 0, total: 12 });
+	assert.deepEqual(parseMcpStatus("\u001b[36mMCP:\u001b[0m 2/3 servers"), {
+		connected: 2,
+		total: 3,
+	});
+	assert.deepEqual(parseMcpStatus("prefix MCP: 0 / 12 servers suffix"), {
+		connected: 0,
+		total: 12,
+	});
 });
 
 test("MCP status parser rejects missing, malformed, or unsafe counts", () => {

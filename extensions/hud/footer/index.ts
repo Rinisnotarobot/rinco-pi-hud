@@ -184,11 +184,7 @@ export function installFooter(
 							return gitStateBlock;
 						case "runtime": {
 							if (!safeRuntime) return "";
-							const symbol = resolveRuntimeSymbol(
-								safeRuntime.name,
-								safeRuntime.symbol,
-								iconMode,
-							);
+							const symbol = resolveRuntimeSymbol(safeRuntime.name, safeRuntime.symbol, iconMode);
 							const label = safeRuntime.version ? `${symbol} ${safeRuntime.version}` : symbol;
 							return renderStyleForSource(theme, colorSource, safeRuntime.style, label);
 						}
@@ -263,12 +259,7 @@ export function installFooter(
 							);
 						case "git_tag":
 							return config.gitCommit.showTag && safeCommit?.tag
-								? renderStyleForSource(
-										theme,
-										colorSource,
-										config.colors.gitCommit,
-										safeCommit.tag,
-									)
+								? renderStyleForSource(theme, colorSource, config.colors.gitCommit, safeCommit.tag)
 								: "";
 						case "git_metrics":
 							return formatGitMetricsSegment(

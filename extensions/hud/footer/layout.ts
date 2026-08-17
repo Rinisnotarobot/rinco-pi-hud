@@ -53,7 +53,11 @@ function prependStatusArea(base: string, statusText: string, separator: string):
 	return `${statusText}${separator}${base}`;
 }
 
-export function composeBuiltInFooterContent(left: string, right: string, innerWidth: number): string {
+export function composeBuiltInFooterContent(
+	left: string,
+	right: string,
+	innerWidth: number,
+): string {
 	const leftWidth = visibleWidth(left);
 	const rightWidth = visibleWidth(right);
 	if (!right) return truncateToWidth(left, innerWidth, "");
@@ -77,17 +81,11 @@ export function composeBuiltInFooterContent(left: string, right: string, innerWi
 	let fittedLeft = truncateToWidth(left, leftBudget, "");
 	let fittedRight = truncateToWidth(right, rightBudget, "");
 	for (let pass = 0; pass < 2; pass += 1) {
-		let spare = Math.max(
-			0,
-			available - visibleWidth(fittedLeft) - visibleWidth(fittedRight),
-		);
+		let spare = Math.max(0, available - visibleWidth(fittedLeft) - visibleWidth(fittedRight));
 		if (spare === 0) break;
 		if (visibleWidth(fittedLeft) < leftWidth) {
 			fittedLeft = truncateToWidth(left, visibleWidth(fittedLeft) + spare, "");
-			spare = Math.max(
-				0,
-				available - visibleWidth(fittedLeft) - visibleWidth(fittedRight),
-			);
+			spare = Math.max(0, available - visibleWidth(fittedLeft) - visibleWidth(fittedRight));
 		}
 		if (spare > 0 && visibleWidth(fittedRight) < rightWidth) {
 			fittedRight = truncateToWidth(right, visibleWidth(fittedRight) + spare, "");

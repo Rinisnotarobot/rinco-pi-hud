@@ -99,7 +99,8 @@ export default function (pi: ExtensionAPI) {
 		if (
 			!currentConfig.features.statusLine ||
 			!(needsWallClock || needsDuration || needsActivityClock)
-		) return;
+		)
+			return;
 
 		const timer = setInterval(() => {
 			if (!sessionLifecycle.isCurrent()) return;
