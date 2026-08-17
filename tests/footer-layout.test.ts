@@ -146,6 +146,38 @@ test("telemetry labels use the four English groups and readable activity labels"
 	assert.equal(labels.mcpLabel, "MCP 2/2");
 });
 
+test("categorized footer omits disabled semantic rows", () => {
+	const rows = composeCategorizedFooterRows(
+		{
+			project: ["Project", "repo"],
+			session: ["Session", "model"],
+			activity: ["Activity", "idle"],
+			usage: ["Usage", "35%"],
+		},
+		separator,
+		80,
+		{ project: true, session: false, activity: true, usage: false },
+	);
+
+	assert.deepEqual(rows, ["Project  · repo", "Activity · idle"]);
+});
+
+test("categorized footer renders no lines when every semantic row is disabled", () => {
+	const rows = composeCategorizedFooterRows(
+		{
+			project: ["Project", "repo"],
+			session: ["Session", "model"],
+			activity: ["Activity", "idle"],
+			usage: ["Usage", "35%"],
+		},
+		separator,
+		80,
+		{ project: false, session: false, activity: false, usage: false },
+	);
+
+	assert.deepEqual(rows, []);
+});
+
 test("categorized footer stays within pathological narrow widths", () => {
 	const rows = composeCategorizedFooterRows(
 		{

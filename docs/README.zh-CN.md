@@ -70,6 +70,10 @@ HUD 脚注默认启用。运行 `/zentui` 打开交互式设置。
 /zentui statusline enable
 /zentui statusline disable
 /zentui statusline toggle
+/zentui row project toggle
+/zentui row session disable
+/zentui row activity enable
+/zentui row usage toggle
 /zentui format clear
 /zentui format "$model · $context · $cost · $git_branch( $git_commit) · $session_duration"
 /codex-status
@@ -120,6 +124,14 @@ HUD 脚注默认启用。运行 `/zentui` 打开交互式设置。
 | Usage | Context、输入 Token、输出 Token、缓存详情/命中率、费用、限额和时间 |
 
 使用旧版聚合开关 `tokens`、`toolActivity` 或 `agentActivity` 的配置会自动迁移。仍可通过 `/zentui statusline enable|disable|toggle` 控制整个脚注。
+
+默认四行布局中的每个语义行也可以通过命令单独控制：
+
+```text
+/zentui row <project|session|activity|usage> <enable|disable|toggle>
+```
+
+行开关会持久化到 `footerRows`。使用自定义单行 `footerFormat` 时，这些开关不生效。
 
 ### 扩展状态
 

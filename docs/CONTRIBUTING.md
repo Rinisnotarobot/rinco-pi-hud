@@ -51,6 +51,7 @@ Tests live in `tests/`:
 - `footer-layout.test.ts` — Four-group categorized layout, segment wrapping, and narrow-width budget.
 - `footer-groups.test.ts` — Semantic Project, Session, Activity, and Usage segment ordering.
 - `footer-segment-controls.test.ts` — Independent status controls and legacy-config migration.
+- `footer-row-controls.test.ts` — Per-row command parsing, persistence, and configuration defaults.
 - `model-switch-statusline.test.ts` — Model switch statusline integration.
 - `model-usage-refresh.test.ts` — Model usage refresh integration.
 - `token-switch-usage.test.ts` — Token Switch balance formatting.

@@ -25,6 +25,7 @@ import {
 	type ExtensionStatusColorMode,
 	type ExtensionStatusesConfig,
 	type ExtensionStatusPlacement,
+	type FooterRowsConfig,
 	type FooterSegmentsConfig,
 	type GitBranchConfig,
 	type GitBranchMaxLength,
@@ -218,6 +219,18 @@ function normalizeUiFeatures(record: Record<string, unknown>): UiFeaturesConfig 
 	return { statusLine: booleanValue(record, "statusLine") };
 }
 
+function normalizeFooterRows(record: Record<string, unknown>): FooterRowsConfig {
+	return {
+		project:
+			typeof record.project === "boolean" ? record.project : defaultConfig.footerRows.project,
+		session:
+			typeof record.session === "boolean" ? record.session : defaultConfig.footerRows.session,
+		activity:
+			typeof record.activity === "boolean" ? record.activity : defaultConfig.footerRows.activity,
+		usage: typeof record.usage === "boolean" ? record.usage : defaultConfig.footerRows.usage,
+	};
+}
+
 function normalizeFooterSegments(record: Record<string, unknown>): FooterSegmentsConfig {
 	return {
 		cwd: footerSegmentValue(record, "cwd"),
@@ -335,6 +348,9 @@ export function mergeConfig(parsed: unknown): PolishedTuiConfig {
 	const features = isRecord(config.features)
 		? normalizeUiFeatures(config.features as Record<string, unknown>)
 		: defaultConfig.features;
+	const footerRows = isRecord(config.footerRows)
+		? normalizeFooterRows(config.footerRows as Record<string, unknown>)
+		: defaultConfig.footerRows;
 	const footerSegments = isRecord(config.footerSegments)
 		? normalizeFooterSegments(config.footerSegments as Record<string, unknown>)
 		: defaultConfig.footerSegments;
@@ -363,6 +379,7 @@ export function mergeConfig(parsed: unknown): PolishedTuiConfig {
 		},
 		colorSources: { ...colorSources },
 		features: { ...features },
+		footerRows: { ...footerRows },
 		footerSegments: { ...footerSegments },
 		gitCommit,
 		gitMetrics,

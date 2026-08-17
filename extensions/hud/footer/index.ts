@@ -533,7 +533,12 @@ export function installFooter(
 						time: timeSegment,
 					},
 				});
-				const contents = composeCategorizedFooterRows(groups, separator, innerWidth);
+				const contents = composeCategorizedFooterRows(
+					groups,
+					separator,
+					innerWidth,
+					config.footerRows,
+				);
 				return contents.map(frame);
 			},
 		};

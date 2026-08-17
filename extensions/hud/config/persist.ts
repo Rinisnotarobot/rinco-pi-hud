@@ -24,6 +24,7 @@ import {
 	type ContextThresholds,
 	type ExtensionStatusColorMode,
 	type ExtensionStatusPlacement,
+	type FooterRowsConfig,
 	type FooterSegmentsConfig,
 	type GitBranchConfig,
 	type IconMode,
@@ -39,6 +40,10 @@ function isColorSourceKey(value: string): value is keyof ColorSourcesConfig {
 
 function isUiFeatureKey(value: string): value is keyof UiFeaturesConfig {
 	return value === "statusLine";
+}
+
+function isFooterRowKey(value: string): value is keyof FooterRowsConfig {
+	return value === "project" || value === "session" || value === "activity" || value === "usage";
 }
 
 function isFooterSegmentKey(value: string): value is keyof FooterSegmentsConfig {
@@ -94,6 +99,15 @@ function validUiFeatureEntries(record: Record<string, unknown>): Partial<UiFeatu
 	) as Partial<UiFeaturesConfig>;
 }
 
+function validFooterRowEntries(record: Record<string, unknown>): Partial<FooterRowsConfig> {
+	return Object.fromEntries(
+		Object.entries(record).filter((entry): entry is [keyof FooterRowsConfig, boolean] => {
+			const [key, value] = entry;
+			return isFooterRowKey(key) && typeof value === "boolean";
+		}),
+	) as Partial<FooterRowsConfig>;
+}
+
 function validFooterSegmentEntries(record: Record<string, unknown>): Partial<FooterSegmentsConfig> {
 	return Object.fromEntries(
 		Object.entries(record).filter((entry): entry is [keyof FooterSegmentsConfig, boolean] => {
@@ -129,6 +143,21 @@ export function saveUiFeaturesPatch(
 		record.features = {
 			...existing,
 			...validUiFeatureEntries(patch),
+		};
+	});
+}
+
+export function saveFooterRowsPatch(
+	patch: Partial<FooterRowsConfig>,
+	path = configPath,
+): PolishedTuiConfig {
+	return mutateConfig(path, (record) => {
+		const existing = isRecord(record.footerRows)
+			? { ...(record.footerRows as Record<string, unknown>) }
+			: {};
+		record.footerRows = {
+			...existing,
+			...validFooterRowEntries(patch),
 		};
 	});
 }

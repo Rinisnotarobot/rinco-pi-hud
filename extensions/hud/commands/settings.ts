@@ -15,6 +15,7 @@ import {
 	type ContextStyle,
 	type ExtensionStatusColorMode,
 	type ExtensionStatusPlacement,
+	type FooterRowsConfig,
 	type FooterSegmentsConfig,
 	type GitBranchConfig,
 	type GitBranchMaxLength,
@@ -78,6 +79,7 @@ type SettingsCommandDeps = {
 		patch: Partial<UiFeaturesConfig>,
 		ctx: ExtensionContext,
 	) => void;
+	setFooterRows: (patch: Partial<FooterRowsConfig>) => void;
 	setFooterSegments: (patch: Partial<FooterSegmentsConfig>) => void;
 	setFooterFormat: (value: string) => void;
 	setIconMode: (mode: IconMode) => void;
@@ -107,6 +109,13 @@ const featureSettingLabels: Record<FeatureSettingId, string> = {
 
 const featureSettingDescriptions: Record<FeatureSettingId, string> = {
 	statusLine: "Enable or disable Zentui's custom footer/status line.",
+};
+
+const footerRowLabels: Record<keyof FooterRowsConfig, string> = {
+	project: "Project row",
+	session: "Session row",
+	activity: "Activity row",
+	usage: "Usage row",
 };
 
 const footerSegmentSettingLabels: Record<FooterSegmentSettingId, string> = {
@@ -183,6 +192,11 @@ const directCommandSuggestions = [
 	"statusline enable",
 	"statusline disable",
 	"statusline toggle",
+	...Object.keys(footerRowLabels).flatMap((row) => [
+		`row ${row} enable`,
+		`row ${row} disable`,
+		`row ${row} toggle`,
+	]),
 	"format clear",
 	"format $cwd on $git_branch $fill $context",
 	"format $cwd( on $git_branch)($git_status)$fill($context)( | $cost)",
@@ -317,7 +331,28 @@ function footerSegmentPatch(
 }
 
 function usageText(): string {
-	return 'Usage: /zentui statusline [enable|disable|toggle] or /zentui format "<template>"';
+	return 'Usage: /zentui statusline [enable|disable|toggle], /zentui row [project|session|activity|usage] [enable|disable|toggle], or /zentui format "<template>"';
+}
+
+function isFooterRow(value: string): value is keyof FooterRowsConfig {
+	return value === "project" || value === "session" || value === "activity" || value === "usage";
+}
+
+function parseDirectRowCommand(
+	args: string,
+	config: PolishedTuiConfig,
+): { row: keyof FooterRowsConfig; enabled: boolean } | undefined {
+	const normalized = args.trim().toLowerCase().replaceAll(/[_-]+/g, " ");
+	const [command, row, action, ...rest] = normalized.split(/\s+/g);
+	if (command !== "row" || !row || !isFooterRow(row) || !action || rest.length > 0) {
+		return undefined;
+	}
+	if (action !== "enable" && action !== "disable" && action !== "toggle") return undefined;
+
+	return {
+		row,
+		enabled: action === "toggle" ? !config.footerRows[row] : action === "enable",
+	};
 }
 
 function parseDirectFeatureCommand(
@@ -564,6 +599,24 @@ export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCo
 				} catch (error) {
 					const message = error instanceof Error ? error.message : String(error);
 					if (ctx.hasUI) ctx.ui.notify(`Could not update footer format: ${message}`, "error");
+				}
+				return;
+			}
+
+			const directRowCommand = parseDirectRowCommand(args, deps.getConfig());
+			if (directRowCommand) {
+				try {
+					deps.setFooterRows({ [directRowCommand.row]: directRowCommand.enabled });
+					deps.requestRender();
+					if (ctx.hasUI) {
+						ctx.ui.notify(
+							`${footerRowLabels[directRowCommand.row]}: ${featureValue(directRowCommand.enabled)}`,
+							"info",
+						);
+					}
+				} catch (error) {
+					const message = error instanceof Error ? error.message : String(error);
+					if (ctx.hasUI) ctx.ui.notify(`Could not update Zentui settings: ${message}`, "error");
 				}
 				return;
 			}

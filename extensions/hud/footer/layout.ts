@@ -7,6 +7,14 @@ export type CategorizedFooterRows = {
 	usage: string[];
 };
 
+export type CategorizedFooterRowVisibility = Record<keyof CategorizedFooterRows, boolean>;
+
+const DEFAULT_ROW_VISIBILITY: CategorizedFooterRowVisibility = {
+	project: true,
+	session: true,
+	activity: true,
+	usage: true,
+};
 const MIN_WRAPPED_CONTENT_WIDTH = 4;
 
 function joinStatusTexts(statusTexts: string[], separator: string): string {
@@ -231,10 +239,21 @@ export function composeCategorizedFooterRows(
 	rows: CategorizedFooterRows,
 	separator: string,
 	innerWidth: number,
+	visibility: CategorizedFooterRowVisibility = DEFAULT_ROW_VISIBILITY,
 ): string[] {
-	const groups = [rows.project, rows.session, rows.activity, rows.usage];
-	const categoryWidth = Math.max(...groups.map((parts) => visibleWidth(categoryLabel(parts))));
-	return groups.flatMap((parts) =>
+	const groups = [
+		{ id: "project", parts: rows.project },
+		{ id: "session", parts: rows.session },
+		{ id: "activity", parts: rows.activity },
+		{ id: "usage", parts: rows.usage },
+	] as const;
+	const visibleGroups = groups.filter(({ id }) => visibility[id]);
+	if (visibleGroups.length === 0) return [];
+
+	const categoryWidth = Math.max(
+		...visibleGroups.map(({ parts }) => visibleWidth(categoryLabel(parts))),
+	);
+	return visibleGroups.flatMap(({ parts }) =>
 		composeWrappedCategorizedRow(parts, separator, innerWidth, categoryWidth),
 	);
 }

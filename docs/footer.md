@@ -13,6 +13,17 @@ Usage    · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030
 
 The category column is sized from visible text so every separator aligns. When a row exceeds the terminal width, complete status segments move to an indented continuation line. Only a single segment that is wider than the available content area is truncated. Third-party extension statuses appear on the Activity group in configured `left`, `middle`, then `right` order.
 
+Control each default-layout row independently:
+
+```text
+/zentui row project enable
+/zentui row session disable
+/zentui row activity toggle
+/zentui row usage toggle
+```
+
+The command shape is `/zentui row <project|session|activity|usage> <enable|disable|toggle>`. Values persist under `footerRows`; all four default to `true`. Row switches apply only to the default layout and do not alter a custom single-line `footerFormat`.
+
 ## Built-in status segments
 
 | Key | Default | Group | Description |

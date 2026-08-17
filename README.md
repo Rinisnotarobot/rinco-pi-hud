@@ -70,6 +70,10 @@ The HUD footer is enabled by default. Run `/zentui` to open the interactive sett
 /zentui statusline enable
 /zentui statusline disable
 /zentui statusline toggle
+/zentui row project toggle
+/zentui row session disable
+/zentui row activity enable
+/zentui row usage toggle
 /zentui format clear
 /zentui format "$model · $context · $cost · $git_branch( $git_commit) · $session_duration"
 /codex-status
@@ -120,6 +124,14 @@ Open `/zentui`, then select **Built-in segments** to enable or disable individua
 | Usage | Context, input tokens, output tokens, cache details/hit rate, cost, quota, and time |
 
 Existing configs using the former aggregate `tokens`, `toolActivity`, or `agentActivity` switches are migrated automatically. The whole footer can still be controlled with `/zentui statusline enable|disable|toggle`.
+
+In the default four-row layout, each semantic row can also be controlled directly:
+
+```text
+/zentui row <project|session|activity|usage> <enable|disable|toggle>
+```
+
+Row switches are persisted in `footerRows`. They do not affect a custom single-line `footerFormat`.
 
 ### Extension statuses
 

@@ -43,6 +43,13 @@ export type UiFeaturesConfig = {
 	statusLine: boolean;
 };
 
+export type FooterRowsConfig = {
+	project: boolean;
+	session: boolean;
+	activity: boolean;
+	usage: boolean;
+};
+
 export type FooterSegmentsConfig = {
 	cwd: boolean;
 	gitBranch: boolean;
@@ -142,6 +149,7 @@ export type PolishedTuiConfig = {
 	};
 	colorSources: ColorSourcesConfig;
 	features: UiFeaturesConfig;
+	footerRows: FooterRowsConfig;
 	footerSegments: FooterSegmentsConfig;
 	gitCommit: GitCommitConfig;
 	gitMetrics: GitMetricsConfig;
@@ -257,6 +265,12 @@ export const defaultConfig: PolishedTuiConfig = {
 	},
 	features: {
 		statusLine: true,
+	},
+	footerRows: {
+		project: true,
+		session: true,
+		activity: true,
+		usage: true,
 	},
 	footerSegments: {
 		cwd: true,
