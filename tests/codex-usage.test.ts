@@ -6,6 +6,18 @@ import { sanitizeCodexText } from "../extensions/hud/telemetry/codex-usage/safet
 
 const capturedAt = 1_700_000_000_000;
 
+// Mirrors the compact reset stamp used on the footer usage row so the assertion
+// stays correct in any local time zone.
+function expectedReset(epochSeconds: number): string {
+	const reset = new Date(epochSeconds * 1000);
+	const time = `${reset.getHours().toString().padStart(2, "0")}:${reset
+		.getMinutes()
+		.toString()
+		.padStart(2, "0")}`;
+	if (reset.toDateString() === new Date().toDateString()) return time;
+	return `${time} ${reset.getDate()} ${reset.toLocaleDateString(undefined, { month: "short" })}`;
+}
+
 function samplePayload() {
 	return {
 		plan_type: "plus",
@@ -42,7 +54,10 @@ describe("integrated Codex usage", () => {
 
 		assert.equal(report.planType, "plus");
 		assert.equal(report.resetCredits?.availableCount, 2);
-		assert.equal(formatCodexUsageStatusline(report), "codex 75% wk");
+		assert.equal(
+			formatCodexUsageStatusline(report),
+			`codex 60% 5h (${expectedReset(1_700_001_000)}) 75% wk`,
+		);
 	});
 
 	it("selects a model-specific usage bucket", () => {
@@ -53,7 +68,7 @@ describe("integrated Codex usage", () => {
 			name: "GPT-5.3 Codex Spark",
 		});
 
-		assert.equal(status, "codex spark 80% wk");
+		assert.equal(status, "codex spark 90% 5h 80% wk");
 	});
 
 	it("falls back to the global weekly limit when a model bucket has no weekly window", () => {
@@ -69,7 +84,7 @@ describe("integrated Codex usage", () => {
 			name: "GPT-5.3 Codex Spark",
 		});
 
-		assert.equal(status, "codex 75% wk");
+		assert.equal(status, "codex spark 90% 5h 75% wk");
 	});
 
 	it("uses a weekly-only primary window for the statusline", () => {
@@ -91,7 +106,7 @@ describe("integrated Codex usage", () => {
 		assert.equal(formatCodexUsageStatusline(report), "codex 58% wk");
 	});
 
-	it("reports when a weekly limit is unavailable", () => {
+	it("reports the 5h window when a weekly limit is unavailable", () => {
 		const report = normalizeBackendPayload(
 			{
 				rate_limit: {
@@ -102,7 +117,7 @@ describe("integrated Codex usage", () => {
 			"pi-auth",
 		);
 
-		assert.equal(formatCodexUsageStatusline(report), "codex weekly unavailable");
+		assert.equal(formatCodexUsageStatusline(report), "codex 60% 5h");
 	});
 
 	it("rejects payloads without displayable usage", () => {

@@ -54,31 +54,48 @@ export function formatCodexUsageStatusline(
 	const snapshot = selectSnapshotForModel(report, model);
 	if (!snapshot) return "usage unavailable";
 
-	const weekly = selectWeeklyWindow(snapshot);
-	if (weekly) return formatStatuslineWindow(snapshot, weekly);
-
-	// A model-specific bucket may omit the long window; fall back to the account-wide one.
+	// A model-specific bucket may omit a window; fall back to the account-wide one.
 	const codexSnapshot = report.snapshots.find(isPrimaryCodexSnapshot);
-	if (codexSnapshot && codexSnapshot !== snapshot) {
-		const fallbackWeekly = selectWeeklyWindow(codexSnapshot);
-		if (fallbackWeekly) return formatStatuslineWindow(codexSnapshot, fallbackWeekly);
-	}
+	const fallbackSnapshot = codexSnapshot !== snapshot ? codexSnapshot : undefined;
+	const short = selectShortWindow(snapshot) ?? selectShortWindow(fallbackSnapshot);
+	const weekly = selectWeeklyWindow(snapshot) ?? selectWeeklyWindow(fallbackSnapshot);
 
-	return `${formatStatuslinePrefix(snapshot)} weekly unavailable`;
+	const ownsWindow = Boolean(selectShortWindow(snapshot) ?? selectWeeklyWindow(snapshot));
+	const labelSnapshot = ownsWindow ? snapshot : (fallbackSnapshot ?? snapshot);
+	const parts = [formatStatuslinePrefix(labelSnapshot)];
+
+	if (short) parts.push(formatStatuslineWindow(short, "5h", true));
+	if (weekly) parts.push(formatStatuslineWindow(weekly, "weekly", false));
+	if (!short && !weekly) parts.push("limits unavailable");
+
+	return parts.join(" ");
 }
 
 function formatStatuslineWindow(
-	snapshot: NormalizedRateLimitSnapshot,
 	window: NormalizedRateLimitWindow,
+	fallback: "5h" | "weekly",
+	withReset: boolean,
 ): string {
-	return `${formatStatuslinePrefix(snapshot)} ${formatRemainingPercent(window)} ${formatWindowLabel(window, "weekly", true)}`;
+	const label = formatWindowLabel(window, fallback, true);
+	const reset = withReset && window.resetsAt ? ` (${formatCompactReset(window.resetsAt)})` : "";
+	return `${formatRemainingPercent(window)} ${label}${reset}`;
+}
+
+// The short (rolling) window is the one shorter than a day; accounts that only
+// report a single long window have no short window at all.
+function selectShortWindow(
+	snapshot: NormalizedRateLimitSnapshot | undefined,
+): NormalizedRateLimitWindow | undefined {
+	if (!snapshot?.primary) return undefined;
+	return isLongWindow(snapshot.primary) ? undefined : snapshot.primary;
 }
 
 // Prefer the secondary (long) window, but some accounts only report a single
 // long window as `primary` — treat any window of a day or more as the weekly one.
 function selectWeeklyWindow(
-	snapshot: NormalizedRateLimitSnapshot,
+	snapshot: NormalizedRateLimitSnapshot | undefined,
 ): NormalizedRateLimitWindow | undefined {
+	if (!snapshot) return undefined;
 	if (snapshot.secondary) return snapshot.secondary;
 	if (snapshot.primary && isLongWindow(snapshot.primary)) return snapshot.primary;
 	return undefined;
@@ -254,6 +271,20 @@ function formatReset(epochSeconds: number): string {
 	const day = reset.getDate().toString();
 	const month = reset.toLocaleDateString(undefined, { month: "short" });
 	return `${time} on ${day} ${month}`;
+}
+
+// Compact reset stamp for the footer usage row: `14:30`, or `14:30 12 Feb`
+// when the window rolls over on a later day.
+function formatCompactReset(epochSeconds: number): string {
+	const reset = new Date(epochSeconds * 1000);
+	if (Number.isNaN(reset.getTime())) return "unknown";
+
+	const time = `${reset.getHours().toString().padStart(2, "0")}:${reset
+		.getMinutes()
+		.toString()
+		.padStart(2, "0")}`;
+	if (reset.toDateString() === new Date().toDateString()) return time;
+	return `${time} ${reset.getDate()} ${reset.toLocaleDateString(undefined, { month: "short" })}`;
 }
 
 export function formatQueryErrors(errors: UsageQueryError[]): string {

@@ -149,7 +149,7 @@ $separator → $sep
 
 The status line automatically switches quota display based on model provider:
 
-- **openai-codex**: Uses Pi Model Registry's Codex Auth to query ChatGPT usage endpoint; falls back to `codex app-server --listen stdio://`. Shows weekly limit percentage, e.g. `codex 75% wk`.
+- **openai-codex**: Uses Pi Model Registry's Codex Auth to query ChatGPT usage endpoint; falls back to `codex app-server --listen stdio://`. Shows the remaining 5h window with its reset time plus the weekly limit percentage, e.g. `codex 60% 5h (14:30) 75% wk` (the reset stamp becomes `14:30 12 Feb` when the window rolls over on a later day).
 - **token-switch**: Uses `TOKEN_SWITCH_API_KEY` environment variable to query billing subscription and usage. Shows available balance, e.g. `token-switch $750.00`.
 
 Both queries use 15-second timeout, 5-minute cache, and auto-refresh. Switching models via `/model` forces a refresh.

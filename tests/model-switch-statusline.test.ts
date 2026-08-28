@@ -79,12 +79,12 @@ it("keeps the cached reading visible when a model switch cannot reach the networ
 
 	try {
 		emit("session_start", {}, ctx);
-		await waitFor(() => statuses.at(-1) === "codex 75% wk");
+		await waitFor(() => statuses.at(-1) === "codex 60% 5h 75% wk");
 
 		online = false;
 		ctx.model = spark;
 		emit("model_select", { model: spark, previousModel: codex, source: "set" }, ctx);
-		await waitFor(() => statuses.at(-1) === "codex spark 80% wk");
+		await waitFor(() => statuses.at(-1) === "codex spark 90% 5h 80% wk");
 	} finally {
 		emit("session_shutdown", {}, ctx);
 		globalThis.fetch = originalFetch;
