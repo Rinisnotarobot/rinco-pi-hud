@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Usage row**: A model on the DeepSeek official provider (`deepseek`) now shows the account balance in
+  the footer, e.g. `deepseek ¥110.00`. The probe reads the Pi credential for the provider, so a key added
+  through `/login` or `DEEPSEEK_API_KEY` works without extra setup, and it hits
+  `https://api.deepseek.com/user/balance`. Accounts reporting both CNY and USD read out CNY. Like the
+  Token Switch balance, it caches for 5 minutes, auto-refreshes, and is what `/usage-refresh` refreshes
+  while a DeepSeek model is active; `/codex-status` leaves the row alone on those models.
+
 ### Fixed
 
 - **`tsconfig.json`**: Added `"noEmit": true` and removed the unused `declaration`/`sourceMap`

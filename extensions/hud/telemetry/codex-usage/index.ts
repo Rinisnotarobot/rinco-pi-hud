@@ -6,6 +6,13 @@ import type {
 import { formatCodexUsageStatusline, formatQueryErrors, showReport } from "./format.ts";
 import { isOpenAICodexModel, isStaleExtensionContextError, queryUsage } from "./query.ts";
 import {
+	DEEPSEEK_PROVIDER_ID,
+	formatDeepSeekBalance,
+	isDeepSeekModel,
+	queryDeepSeekBalance,
+	type DeepSeekBalance,
+} from "../deepseek-balance.ts";
+import {
 	formatTokenSwitchBalance,
 	isTokenSwitchModel,
 	queryTokenSwitchBalance,
@@ -26,6 +33,11 @@ interface CommandArgumentCompletion {
 	value: string;
 	label: string;
 	description?: string;
+}
+
+/** Providers whose statusline is an account balance rather than a rate-limit window. */
+function isBalanceProviderModel(model: Pick<CodexUsageModel, "provider"> | undefined): boolean {
+	return isTokenSwitchModel(model) || isDeepSeekModel(model);
 }
 
 /** Provider-specific hooks driving the shared usage-statusline refresh pipeline. */
@@ -59,6 +71,7 @@ export default function registerCodexUsage(
 ) {
 	let cache: CachedReport | undefined;
 	let tokenSwitchCache: { createdAt: number; balance: number } | undefined;
+	let deepSeekCache: { createdAt: number; balance: DeepSeekBalance } | undefined;
 	let statuslineClearTimer: ReturnType<typeof setTimeout> | undefined;
 	let statuslineRefreshTimer: ReturnType<typeof setTimeout> | undefined;
 	let statuslineRequestId = 0;
@@ -87,6 +100,19 @@ export default function registerCodexUsage(
 		activeQueries.add(controller);
 		try {
 			return await queryTokenSwitchBalance({ timeoutMs, signal: controller.signal });
+		} finally {
+			activeQueries.delete(controller);
+		}
+	};
+
+	// The DeepSeek balance rides on the credential Pi already holds for the
+	// provider, so a model switched in via /login works without extra setup.
+	const runDeepSeekQuery = async (ctx: ExtensionContext, timeoutMs: number) => {
+		const apiKey = await ctx.modelRegistry.getApiKeyForProvider(DEEPSEEK_PROVIDER_ID);
+		const controller = new AbortController();
+		activeQueries.add(controller);
+		try {
+			return await queryDeepSeekBalance({ apiKey, timeoutMs, signal: controller.signal });
 		} finally {
 			activeQueries.delete(controller);
 		}
@@ -235,6 +261,23 @@ export default function registerCodexUsage(
 		activeStatuslineContext = ctx;
 		const selectedModel = model ?? ctx.model;
 
+		if (isDeepSeekModel(selectedModel)) {
+			await refreshUsageStatusline<DeepSeekBalance>(ctx, force, {
+				readCache: () =>
+					deepSeekCache
+						? { createdAt: deepSeekCache.createdAt, value: deepSeekCache.balance }
+						: undefined,
+				writeCache: (balance) => {
+					deepSeekCache = { createdAt: Date.now(), balance };
+				},
+				query: () => runDeepSeekQuery(ctx, DEFAULT_TIMEOUT_MS),
+				render: formatDeepSeekBalance,
+				pendingLabel: "checking balance",
+				errorLabel: "balance error",
+			});
+			return;
+		}
+
 		if (isTokenSwitchModel(selectedModel)) {
 			await refreshUsageStatusline<number>(ctx, force, {
 				readCache: () =>
@@ -284,9 +327,9 @@ export default function registerCodexUsage(
 				return;
 			}
 
-			// On a Token Switch model the statusline belongs to the balance probe, so the
-			// Codex report is shown without overwriting it.
-			const useStatusline = options.value.statusline && !isTokenSwitchModel(ctx.model);
+			// On a balance provider the statusline belongs to that probe, so the Codex
+			// report is shown without overwriting it.
+			const useStatusline = options.value.statusline && !isBalanceProviderModel(ctx.model);
 
 			const cached = cache && Date.now() - cache.createdAt < CACHE_TTL_MS ? cache : undefined;
 			if (cached && !options.value.refresh) {
@@ -338,7 +381,7 @@ export default function registerCodexUsage(
 		description: "Refresh the model usage or balance shown in the footer now",
 		handler: async (_args, ctx) => {
 			// Refresh whichever probe owns the statusline for the active provider.
-			if (isTokenSwitchModel(ctx.model)) {
+			if (isBalanceProviderModel(ctx.model)) {
 				await refreshCurrentUsageStatusline(ctx, true).catch(rethrowUnlessStaleContextError(ctx));
 				return;
 			}
@@ -353,6 +396,7 @@ export default function registerCodexUsage(
 		clearStatuslineTimers();
 		cache = undefined;
 		tokenSwitchCache = undefined;
+		deepSeekCache = undefined;
 		activeStatuslineContext = undefined;
 		sessionActive = true;
 		void refreshCurrentUsageStatusline(ctx, false, ctx.model).catch(

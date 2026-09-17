@@ -56,6 +56,7 @@ Tests live in `tests/`:
 - `model-switch-statusline.test.ts` — Model switch statusline integration.
 - `model-usage-refresh.test.ts` — Model usage refresh integration.
 - `token-switch-usage.test.ts` — Token Switch balance formatting.
+- `deepseek-balance.test.ts` — DeepSeek balance parsing, formatting, and query safety.
 
 When adding tests:
 
@@ -98,7 +99,7 @@ The HUD extension is organized into functional modules under `extensions/hud/`:
 - **`segments/`** — State collectors: Git, runtime, MCP, skills, projects, etc.
 - **`session/`** — Pi event registration, lifecycle generations, and live-context throttling.
 - **`state/`** — Shared footer state, telemetry reducer, and project-refresh controller.
-- **`telemetry/`** — Usage formatting, token switch, and Codex subscription client.
+- **`telemetry/`** — Usage formatting, provider balance probes, and Codex subscription client.
 - **`ui/`** — Icons and terminal style utilities.
 
 Key conventions:

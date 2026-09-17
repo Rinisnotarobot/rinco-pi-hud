@@ -151,5 +151,6 @@ The status line automatically switches quota display based on model provider:
 
 - **openai-codex**: Uses Pi Model Registry's Codex Auth to query ChatGPT usage endpoint; falls back to `codex app-server --listen stdio://`. Shows the remaining 5h window with its reset time plus the weekly limit percentage, e.g. `codex 60% 5h (14:30) 75% wk` (the reset stamp becomes `14:30 12 Feb` when the window rolls over on a later day).
 - **token-switch**: Uses `TOKEN_SWITCH_API_KEY` environment variable to query billing subscription and usage. Shows available balance, e.g. `token-switch $750.00`.
+- **deepseek**: Uses the credential Pi holds for the DeepSeek provider (the one `/login` stores for `deepseek`, or `DEEPSEEK_API_KEY`) to query `https://api.deepseek.com/user/balance`. Shows the total balance, preferring CNY when the account reports several currencies, e.g. `deepseek ¥110.00`. A balance query without a usable key reads as `balance error` in the footer.
 
-Both queries use 15-second timeout, 5-minute cache, and auto-refresh. Switching models via `/model` forces a refresh.
+All queries use a 15-second timeout, a 5-minute cache, and auto-refresh. Switching models via `/model` forces a refresh, and `/usage-refresh` refreshes whichever probe currently owns the row.

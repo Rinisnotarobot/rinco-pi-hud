@@ -106,3 +106,63 @@ it("refreshes the Token Switch balance via /usage-refresh without a Codex query"
 	assert.equal(balanceAfterRefresh, "token-switch $9.00");
 	assert.equal(notifications.length, 0);
 });
+
+it("shows the DeepSeek balance from the Pi provider credential", async () => {
+	const handlers = new Map<string, Handler>();
+	const commands = new Map<string, (args: string, ctx: unknown) => unknown>();
+	const pi = {
+		registerCommand(name: string, spec: { handler: (args: string, ctx: unknown) => unknown }) {
+			commands.set(name, spec.handler);
+		},
+		on(event: string, handler: Handler) {
+			handlers.set(event, handler);
+		},
+	};
+	const statuses: Array<string | undefined> = [];
+	registerCodexUsage(pi as never, (_ctx, value) => statuses.push(value));
+
+	const model = { provider: "deepseek", id: "deepseek-chat", name: "DeepSeek Chat" };
+	const notifications: string[] = [];
+	const requestedUrls: string[] = [];
+	const authorizations: string[] = [];
+	const ctx = {
+		model,
+		hasUI: true,
+		ui: { notify: (text: string) => notifications.push(text) },
+		modelRegistry: { getApiKeyForProvider: async () => "test-key" },
+	};
+	const originalFetch = globalThis.fetch;
+	globalThis.fetch = async (input, init) => {
+		requestedUrls.push(String(input));
+		authorizations.push(new Headers(init?.headers).get("Authorization") ?? "");
+		return new Response(
+			JSON.stringify({
+				is_available: true,
+				balance_infos: [{ currency: "CNY", total_balance: "110.00" }],
+			}),
+			{ status: 200 },
+		);
+	};
+
+	let balanceAfterRefresh: string | undefined;
+	try {
+		handlers.get("session_start")?.({}, ctx);
+		await waitFor(() => statuses.at(-1) === "deepseek ¥110.00");
+
+		await commands.get("usage-refresh")?.("", ctx);
+		await waitFor(() => requestedUrls.length === 2);
+		balanceAfterRefresh = statuses.at(-1);
+	} finally {
+		handlers.get("session_shutdown")?.({}, ctx);
+		globalThis.fetch = originalFetch;
+	}
+
+	// Only the balance endpoint is hit, and the Pi credential is what authorizes it.
+	assert.deepEqual(requestedUrls, [
+		"https://api.deepseek.com/user/balance",
+		"https://api.deepseek.com/user/balance",
+	]);
+	assert.deepEqual(authorizations, ["Bearer test-key", "Bearer test-key"]);
+	assert.equal(balanceAfterRefresh, "deepseek ¥110.00");
+	assert.equal(notifications.length, 0);
+});
