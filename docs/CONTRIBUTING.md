@@ -22,17 +22,20 @@ Pi loads the TypeScript extension directly, so this project has no separate buil
 
 ## Available commands
 
-<!-- AUTO-GENERATED: package-scripts:start -->
-<!-- Source: package.json#scripts. Do not edit manually. -->
-
 | Command | Description |
 | --- | --- |
 | `npm test` | Run the complete Vitest suite once. |
 | `npm run test:watch` | Run Vitest in watch mode and retest when files change. |
 | `npm run typecheck` | Run TypeScript type checking with `tsc --noEmit`. |
+| `npm run lint` | Run ESLint over `extensions/` and `tests/`. |
+| `npm run lint:fix` | Run ESLint and apply its automatic fixes. |
+| `npm run format:check` | Check Prettier formatting for the TypeScript sources and the two config files. |
+| `npm run format` | Apply Prettier formatting to the same files. |
+| `npm run verify` | Run `format:check`, `typecheck`, `lint`, and `test`, in that order. |
 | `npm run pack:check` | Inspect the publishable package with `npm pack --dry-run` without publishing it. |
 
-<!-- AUTO-GENERATED: package-scripts:end -->
+This table mirrors `package.json#scripts`. Nothing in this repository generates it, so update it by hand
+when a script is added, renamed, or removed.
 
 ## Testing
 
@@ -84,9 +87,7 @@ Follow the configured conventions:
 - Use TypeScript ESM and explicit types.
 - Use tab indentation, double quotes, and semicolons.
 - Keep extension lifecycle handling clear and release timers and UI state during `session_shutdown`.
-- Do not edit content enclosed by `AUTO-GENERATED` markers manually; regenerate it from the source identified in the marker.
-
-Do not add ignore rules, skip tests, or weaken types merely to bypass a check.
+- Do not add ignore rules, skip tests, or weaken types merely to bypass a check.
 
 ## Architecture notes
 
