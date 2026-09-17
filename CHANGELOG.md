@@ -28,6 +28,14 @@ All notable changes to this project are documented in this file.
 
 ### Docs
 
+- **README redesign**: Both READMEs now open with the footer itself instead of a feature list. The hero
+  board and a width-comparison board under `assets/readme/` are generated from a real render —
+  `assets/readme/source/capture-footer.mts` drives the extension's own `installFooter` path over this
+  repository's state and a real Pi session transcript, and `build-assets.mts` converts the ANSI rows to
+  SVG. The feature bullets and the segment table collapsed into one row/segment table, commands moved
+  into a table up front, and the configuration detail stays in `docs/footer.md`. `package.json` now
+  publishes `assets/readme/*.svg` so npm renders the images too.
+
 - Noted the `noEmit: true` / no-build-step relationship in `README.md`,
   `docs/README.zh-CN.md`, and `docs/CONTRIBUTING.md`.
 

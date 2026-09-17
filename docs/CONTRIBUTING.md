@@ -102,6 +102,11 @@ The HUD extension is organized into functional modules under `extensions/hud/`:
 - **`telemetry/`** — Usage formatting, provider balance probes, and Codex subscription client.
 - **`ui/`** — Icons and terminal style utilities.
 
+`assets/readme/` holds the README visuals. Both boards are generated, not drawn: `source/capture-footer.mts`
+runs the real `installFooter` render path over a checkout plus a real Pi session transcript, and
+`source/build-assets.mts` converts the ANSI rows into SVG. Regenerate them with `npx tsx` as described in
+the README instead of editing the `.svg` files by hand.
+
 Key conventions:
 
 - Keep composition in `index.ts`, Pi event listeners in `session/event-handlers.ts`, and avoid file reads or subprocesses in `render()`.
