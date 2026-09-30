@@ -117,13 +117,13 @@ test("telemetry labels use the four English groups and readable activity labels"
 			configCounts: {
 				instructionFiles: { agentsMd: 0, claudeMd: 0, total: 0 },
 				packages: 0,
+				mcpServers: 2,
 			},
 			skillCounts: { active: 2, total: 3 },
 		} as never,
 		unstyledConfig,
 		{ fg: (_color: string, text: string) => text },
 		"theme",
-		{ connected: 2, total: 2 },
 	);
 
 	assert.deepEqual(
@@ -143,7 +143,7 @@ test("telemetry labels use the four English groups and readable activity labels"
 	assert.equal(labels.inputTokensLabel, "↑ 4.2k");
 	assert.equal(labels.outputTokensLabel, "↓ 1.1k");
 	assert.equal(labels.skillsLabel, "Skill 2/3");
-	assert.equal(labels.mcpLabel, "MCP 2/2");
+	assert.equal(labels.mcpLabel, "MCP 2");
 });
 
 test("categorized footer omits disabled semantic rows", () => {

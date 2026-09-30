@@ -113,7 +113,7 @@ Usage 行跟随当前模型的 Provider：
 | [`extensions/hud/ui/`](../extensions/hud/ui/) | 图标与终端样式工具 |
 | [`docs/footer.md`](footer.md) | 完整脚注配置参考 |
 | [`docs/CONTRIBUTING.md`](CONTRIBUTING.md) | 本地开发、测试规范和 PR 检查清单 |
-| [`tests/`](../tests/) | Vitest 测试套件：脚注布局、遥测、各家余额与 MCP 解析 |
+| [`tests/`](../tests/) | Vitest 测试套件：脚注布局、遥测、各家余额与 MCP 配置计数 |
 
 ## 开发
 

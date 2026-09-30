@@ -11,7 +11,6 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import type { ColorSource, PolishedTuiConfig } from "../config/config.js";
-import type { McpStatus } from "../segments/mcp-status.js";
 import { formatSkillCounts } from "../segments/skill-activity.js";
 import type { FooterState } from "../state/index.js";
 import { getTelemetryStats } from "../state/telemetry.js";
@@ -164,7 +163,6 @@ export function buildTelemetryLabels(
 	config: PolishedTuiConfig,
 	theme: ThemeLike,
 	colorSource: ColorSource,
-	mcpStatus: McpStatus | undefined,
 ): TelemetryLabels {
 	const statusStyle = (style: string, text: string) =>
 		text ? renderStyleForSource(theme, colorSource, style, text) : "";
@@ -267,9 +265,10 @@ export function buildTelemetryLabels(
 			: "";
 	const configCountsLabel = [instructionFilesLabel, extensionsLabel].filter(Boolean).join(" ");
 
-	const mcpLabel = mcpStatus
-		? statusStyle(config.colors.gitStatus, `MCP ${mcpStatus.connected}/${mcpStatus.total}`)
-		: "";
+	const mcpLabel =
+		state.configCounts.mcpServers > 0
+			? statusStyle(config.colors.gitStatus, `MCP ${state.configCounts.mcpServers}`)
+			: "";
 
 	const telemetryStats = getTelemetryStats(state.telemetry);
 	const toolCountsText = Object.entries(telemetryStats.completedToolCounts)

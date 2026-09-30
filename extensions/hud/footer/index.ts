@@ -31,7 +31,6 @@ import {
 } from "../telemetry/format.js";
 import { resolveRuntimeSymbol } from "../ui/icons.js";
 import type { LiveContextOverride } from "../session/live-context.js";
-import { parseMcpStatus } from "../segments/mcp-status.js";
 import type { FooterState } from "../state/index.js";
 import { renderStyleForSource } from "../ui/style.js";
 
@@ -74,7 +73,6 @@ export function installFooter(
 				const colorSource = config.colorSources.starship;
 				const iconMode = config.icons.mode;
 				const rawExtensionStatuses = footerData.getExtensionStatuses();
-				const mcpStatus = parseMcpStatus(rawExtensionStatuses.get("mcp"));
 				const { safeCwd, safeRuntime, safePackageVersion, safeCommit } = sanitizeFooterInputs(
 					ctx,
 					state,
@@ -166,7 +164,7 @@ export function installFooter(
 					runningToolsLabel,
 					activeAgentsLabel,
 					agentIdleLabel,
-				} = buildTelemetryLabels(ctx, state, config, theme, colorSource, mcpStatus);
+				} = buildTelemetryLabels(ctx, state, config, theme, colorSource);
 				const renderVariable = (name: string): string => {
 					const canonical = FOOTER_FORMAT_ALIASES[name] ?? name;
 					switch (canonical) {
@@ -439,14 +437,7 @@ export function installFooter(
 							formatTimeLabel(""),
 						)}`
 					: "";
-				const formatNeedsMcp = /\$\{?mcp\b/.test(config.footerFormat);
-				const dedicatedMcpVisible = Boolean(
-					mcpStatus && (config.footerFormat ? formatNeedsMcp : config.footerSegments.mcp),
-				);
-				const extensionStatusSource = dedicatedMcpVisible
-					? new Map([...rawExtensionStatuses].filter(([key]) => key !== "mcp"))
-					: rawExtensionStatuses;
-				const extensionStatuses = collectExtensionStatusSegments(extensionStatusSource, config);
+				const extensionStatuses = collectExtensionStatusSegments(rawExtensionStatuses, config);
 				const renderExtensionStatus = (segment: ExtensionStatusSegment) =>
 					segment.colorMode === "original"
 						? segment.text

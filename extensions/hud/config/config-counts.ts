@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import { readFileSync, statSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
+import { countConfiguredMcpServers } from "../segments/mcp-status.js";
 
 export interface ConfigCounts {
 	instructionFiles: {
@@ -9,6 +10,7 @@ export interface ConfigCounts {
 		total: number;
 	};
 	packages: number;
+	mcpServers: number;
 }
 
 export interface ConfigCountOptions {
@@ -82,6 +84,7 @@ export function countConfigEntries(cwd: string, options: ConfigCountOptions = {}
 			total: agentsMd + claudeMd,
 		},
 		packages: countPackages(agentDir),
+		mcpServers: countConfiguredMcpServers(cwd, agentDir),
 	};
 }
 

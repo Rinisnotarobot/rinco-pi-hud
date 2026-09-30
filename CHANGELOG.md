@@ -15,6 +15,12 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- **MCP segment**: Read server entries from Pi's agent-directory `mcp.json` and project
+  `.pi/mcp.json` instead of parsing the old adapter's footer status. Displays `MCP N`, includes
+  disabled entries, and counts same-name entries once. This is a file configuration count, not a
+  connection count; dynamically registered extension servers are not included. Legacy adapter
+  statuses remain ordinary third-party statuses.
+
 - **`tsconfig.json`**: Added `"noEmit": true` and removed the unused `declaration`/`sourceMap`
   options. TypeScript requires `allowImportingTsExtensions` to be paired with one of `noEmit`,
   `emitDeclarationOnly`, or `rewriteRelativeImportExtensions`; this project never emits build

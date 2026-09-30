@@ -113,7 +113,7 @@ See [docs/footer.md](docs/footer.md) for the full variable and segment reference
 | [`extensions/hud/ui/`](extensions/hud/ui/) | Icons and terminal style utilities |
 | [`docs/footer.md`](docs/footer.md) | Complete footer configuration reference |
 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Local development, testing guidance, and pull request checklist |
-| [`tests/`](tests/) | Vitest suite: footer layout, telemetry, provider balances, MCP parsing |
+| [`tests/`](tests/) | Vitest suite: footer layout, telemetry, provider balances, MCP configuration counts |
 
 ## Development
 

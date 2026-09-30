@@ -11,7 +11,7 @@ import {
 	updateTelemetryState,
 } from "../extensions/hud/state/telemetry.ts";
 import { countConfigEntries } from "../extensions/hud/config/config-counts.ts";
-import { parseMcpStatus } from "../extensions/hud/segments/mcp-status.ts";
+import { countConfiguredMcpServers } from "../extensions/hud/segments/mcp-status.ts";
 import { __test__ as packageVersionTest } from "../extensions/hud/segments/package-version.ts";
 import {
 	formatSkillCounts,
@@ -317,12 +317,14 @@ test("config counts tolerate missing files and use a custom agent directory", as
 		assert.deepEqual(countConfigEntries(cwd, { agentDir }), {
 			instructionFiles: { agentsMd: 1, claudeMd: 1, total: 2 },
 			packages: 2,
+			mcpServers: 0,
 		});
 		assert.deepEqual(
 			countConfigEntries(join(root, "missing-project"), { agentDir: join(root, "missing-agent") }),
 			{
 				instructionFiles: { agentsMd: 0, claudeMd: 0, total: 0 },
 				packages: 0,
+				mcpServers: 0,
 			},
 		);
 	} finally {
@@ -343,6 +345,7 @@ test("config counts isolate corrupt settings from other counts", async () => {
 		assert.deepEqual(countConfigEntries(cwd, { agentDir }), {
 			instructionFiles: { agentsMd: 1, claudeMd: 0, total: 1 },
 			packages: 0,
+			mcpServers: 0,
 		});
 	} finally {
 		await rm(root, { recursive: true, force: true });
@@ -374,43 +377,78 @@ test("package versions reject terminal controls and oversized values", () => {
 	assert.equal(packageVersionTest.cleanVersion("1".repeat(161)), undefined);
 });
 
-test("MCP status parser supports current enabled and legacy fraction formats", () => {
-	assert.deepEqual(parseMcpStatus("🔌 MCP: 3 servers enabled (2 connected)"), {
-		connected: 2,
-		total: 3,
-	});
-	assert.deepEqual(parseMcpStatus("🔌 MCP: 3 servers enabled"), { connected: 0, total: 3 });
-	assert.deepEqual(parseMcpStatus("🔌 MCP: 1 server enabled"), { connected: 0, total: 1 });
-	assert.deepEqual(parseMcpStatus("🔌 MCP: 2 servers enabled (1 disabled)"), {
-		connected: 0,
-		total: 2,
-	});
-	assert.deepEqual(parseMcpStatus("🔌 MCP: 2 servers enabled (1 connected) (1 disabled)"), {
-		connected: 1,
-		total: 2,
-	});
-	assert.deepEqual(parseMcpStatus("\u001b[36m🔌 MCP: 12 servers enabled (4 connected)\u001b[0m"), {
-		connected: 4,
-		total: 12,
-	});
-	assert.deepEqual(parseMcpStatus("\u001b[36mMCP:\u001b[0m 2/3 servers"), {
-		connected: 2,
-		total: 3,
-	});
-	assert.deepEqual(parseMcpStatus("prefix MCP: 0 / 12 servers suffix"), {
-		connected: 0,
-		total: 12,
-	});
+test("MCP config counts merge scopes, include disabled entries, and refresh from disk", async () => {
+	const root = await mkdtemp(join(tmpdir(), "hud-mcp-"));
+	try {
+		const cwd = join(root, "project");
+		const agentDir = join(root, "agent");
+		await mkdir(join(cwd, ".pi"), { recursive: true });
+		await mkdir(agentDir);
+		await writeFile(
+			join(agentDir, "mcp.json"),
+			JSON.stringify({
+				mcpServers: {
+					shared: { command: "never-run-this-command" },
+					global: {
+						url: "https://example.invalid/mcp",
+						headers: { Authorization: "!never-run-this-command" },
+					},
+					disabled: { command: "never-run-this-command", enabled: false },
+				},
+			}),
+		);
+		const projectPath = join(cwd, ".pi", "mcp.json");
+		await writeFile(
+			projectPath,
+			JSON.stringify({
+				mcpServers: {
+					shared: { url: "https://example.invalid/override", enabled: false },
+					project: { command: "never-run-this-command" },
+				},
+			}),
+		);
+		assert.equal(countConfiguredMcpServers(cwd, agentDir), 4);
+		assert.equal(countConfigEntries(cwd, { agentDir }).mcpServers, 4);
+		assert.equal(countConfiguredMcpServers(cwd, ""), 2);
+		await writeFile(projectPath, JSON.stringify({ mcpServers: {} }));
+		assert.equal(countConfiguredMcpServers(cwd, agentDir), 3);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
 });
 
-test("MCP status parser rejects missing, malformed, or unsafe counts", () => {
-	assert.equal(parseMcpStatus("MCP: unavailable"), undefined);
-	assert.equal(parseMcpStatus("MCP: 2/3 clients"), undefined);
-	assert.equal(parseMcpStatus("MCP: 4/3 servers"), undefined);
-	assert.equal(parseMcpStatus("MCP: 2/99999 servers"), undefined);
-	assert.equal(parseMcpStatus("🔌 MCP: 3 servers enabled (4 connected)"), undefined);
-	assert.equal(parseMcpStatus("🔌 MCP: 10001 servers enabled (1 connected)"), undefined);
-	assert.equal(parseMcpStatus("🔌 MCP: 3 servers enabled (99999 connected)"), undefined);
-	assert.equal(parseMcpStatus("🔌 MCP: 3 servers enabled (100000 connected)"), undefined);
-	assert.equal(parseMcpStatus(undefined), undefined);
+test("MCP config counts tolerate missing, malformed, oversized, and non-file sources", async () => {
+	const root = await mkdtemp(join(tmpdir(), "hud-mcp-invalid-"));
+	try {
+		const cwd = join(root, "project");
+		const agentDir = join(root, "agent");
+		await mkdir(join(cwd, ".pi"), { recursive: true });
+		await mkdir(agentDir);
+		const globalPath = join(agentDir, "mcp.json");
+		const projectPath = join(cwd, ".pi", "mcp.json");
+		assert.equal(countConfiguredMcpServers(cwd, agentDir), 0);
+		await writeFile(globalPath, JSON.stringify({ mcpServers: { global: { command: "unused" } } }));
+		for (const text of [
+			"{broken",
+			"null",
+			"[]",
+			'{"mcpServers":[]}',
+			" ".repeat(1024 * 1024 + 1),
+		]) {
+			await writeFile(projectPath, text);
+			assert.equal(countConfiguredMcpServers(cwd, agentDir), 1);
+		}
+		await writeFile(
+			projectPath,
+			JSON.stringify({
+				mcpServers: { valid: {}, "bad name": {}, list: [], nil: null, scalar: "unused" },
+			}),
+		);
+		assert.equal(countConfiguredMcpServers(cwd, agentDir), 2);
+		await rm(projectPath);
+		await mkdir(projectPath);
+		assert.equal(countConfiguredMcpServers(cwd, agentDir), 1);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
 });

@@ -7,9 +7,11 @@ When `footerFormat` is empty, the HUD displays four semantic groups:
 ```text
 Project  · pi-sakura ·  main ·  24.18
 Session  · gpt-5.3 · Thinking level: high · Turn 8
-Activity · Agent idle · Skill 2/3 · MCP 2/2
+Activity · Agent idle · Skill 2/3 · MCP 2
 Usage    · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030
 ```
+
+The MCP segment counts server entries in Pi's agent-directory `mcp.json` and the project's `.pi/mcp.json`. Same-name entries count once; disabled entries are included. Zero entries hide the segment. Counts refresh with the project state polling interval. This does not report connection state, validate individual server settings, or include servers registered dynamically by extensions. Missing, unreadable, malformed, or larger-than-1-MiB files contribute no entries. Legacy adapter footer statuses remain ordinary third-party statuses.
 
 The category column is sized from visible text so every separator aligns. When a row exceeds the terminal width, complete status segments move to an indented continuation line. Only a single segment that is wider than the available content area is truncated. Third-party extension statuses appear on the Activity group in configured `left`, `middle`, then `right` order.
 
@@ -50,7 +52,7 @@ The command shape is `/zentui row <project|session|activity|usage> <enable|disab
 | `activeAgents` | on | Activity | Active primary agent runs |
 | `agentIdle` | on | Activity | `Agent idle` when no primary agent run is active |
 | `skills` | on | Activity | Active/available skills count, e.g. `Skill 1/3` |
-| `mcp` | on | Activity | MCP connected/total servers |
+| `mcp` | on | Activity | File-configured MCP servers, e.g. `MCP 2` |
 | `context` | on | Usage | Context percentage, window size, and/or gauge |
 | `inputTokens` | on | Usage | Cumulative input tokens |
 | `outputTokens` | on | Usage | Cumulative output tokens |
@@ -119,7 +121,7 @@ Clear it:
 | `$skills` | Active/available skills, e.g. `Skill 1/3` |
 | `$active_skills` | Active skills count only |
 | `$extensions` | Installed Pi packages count |
-| `$mcp` | MCP connected/total |
+| `$mcp` | File-configured MCP server count |
 | `$tool_counts` | Native tool completion counts |
 | `$running_tools` | Recently running tools |
 | `$active_agents` | Active primary agent runs |
