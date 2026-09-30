@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0]
+
 ### Added
 
 - **Usage row**: A model on the DeepSeek official provider (`deepseek`) now shows the account balance in
