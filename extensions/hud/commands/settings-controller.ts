@@ -42,6 +42,7 @@ export function registerSettingsController(pi: ExtensionAPI, deps: SettingsContr
 		},
 		setFooterRows(patch) {
 			updateConfig(saveFooterRowsPatch(patch));
+			deps.restartSessionTimer();
 		},
 		setFooterSegments(patch) {
 			updateConfig(saveFooterSegmentsPatch(patch));

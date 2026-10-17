@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { runtimeDefinitions, type RuntimeDef } from "./runtime-definitions.js";
@@ -15,32 +16,32 @@ export type RuntimeInfo = Pick<RuntimeMetadata, "name" | "symbol" | "style"> & {
 export type RuntimeReadResult = { kind: "ok"; runtime?: RuntimeInfo } | { kind: "error" };
 
 type RuntimeCacheEntry = {
-	fingerprint: string;
-	runtime: RuntimeInfo | undefined;
+	result: RuntimeReadResult;
+	expiresAt: number;
 };
 
 const RUNTIME_CACHE_MAX = 32;
+const RUNTIME_CACHE_TTL_MS = 60_000;
+const RUNTIME_RETRY_TTL_MS = 5_000;
 const runtimeInfoCache = new Map<string, RuntimeCacheEntry>();
+const runtimeReadsInFlight = new Map<string, Promise<RuntimeReadResult>>();
+let cacheEpoch = 0;
 
 export function clearRuntimeInfoCache(): void {
+	cacheEpoch += 1;
 	runtimeInfoCache.clear();
+	// New callers must not join a probe started before the clear.
+	runtimeReadsInFlight.clear();
 }
 
 function topLevelFingerprint(entries: readonly string[]): string {
 	return entries.slice().sort().join("\0");
 }
 
-function cacheRuntimeInfo(
-	cwd: string,
-	fingerprint: string,
-	runtime: RuntimeInfo | undefined,
-): void {
-	// Drop prior fingerprints for the same cwd so stale marker sets do not linger.
-	for (const key of runtimeInfoCache.keys()) {
-		if (key === cwd || key.startsWith(`${cwd}\0`)) runtimeInfoCache.delete(key);
-	}
-	const key = `${cwd}\0${fingerprint}`;
-	runtimeInfoCache.set(key, { fingerprint, runtime });
+function cacheRuntimeInfo(key: string, result: RuntimeReadResult): void {
+	const ttl =
+		result.kind === "ok" && result.runtime?.version ? RUNTIME_CACHE_TTL_MS : RUNTIME_RETRY_TTL_MS;
+	runtimeInfoCache.set(key, { result, expiresAt: Date.now() + ttl });
 	while (runtimeInfoCache.size > RUNTIME_CACHE_MAX) {
 		const oldest = runtimeInfoCache.keys().next().value;
 		if (oldest === undefined) break;
@@ -140,28 +141,53 @@ export async function readRuntimeInfo(cwd: string): Promise<RuntimeReadResult> {
 		return { kind: "error" };
 	}
 
-	const fingerprint = topLevelFingerprint(entries);
-	const cacheKey = `${cwd}\0${fingerprint}`;
+	// Detection uses shell variables and version commands inherit the environment.
+	// Include all variables (including PATH and toolchain-manager settings) so a
+	// changed environment never reuses the old probe. JSON avoids key collisions.
+	const env = { ...process.env };
+	const environment = Object.keys(env)
+		.sort()
+		.map((key) => [key, env[key]]);
+	// Hash environment values so cache keys do not retain plaintext credentials.
+	const environmentKey = createHash("sha256").update(JSON.stringify(environment)).digest("hex");
+	const cacheKey = JSON.stringify([cwd, topLevelFingerprint(entries), environmentKey]);
 	const cached = runtimeInfoCache.get(cacheKey);
-	if (cached && cached.fingerprint === fingerprint) {
-		return { kind: "ok", runtime: cached.runtime };
+	if (cached) {
+		if (Date.now() < cached.expiresAt) return cached.result;
+		runtimeInfoCache.delete(cacheKey);
 	}
+	const inFlight = runtimeReadsInFlight.get(cacheKey);
+	if (inFlight) return inFlight;
 
-	try {
-		const runtime = detectRuntime(cwd, entries);
-		if (!runtime) {
-			cacheRuntimeInfo(cwd, fingerprint, undefined);
-			return { kind: "ok", runtime: undefined };
+	const epoch = cacheEpoch;
+	const read = async (): Promise<RuntimeReadResult> => {
+		try {
+			const runtime = detectRuntime(cwd, entries, env);
+			if (!runtime) return { kind: "ok", runtime: undefined };
+			return {
+				kind: "ok",
+				runtime: {
+					name: runtime.name,
+					symbol: runtime.symbol,
+					style: runtime.style,
+					version: await runtime.version(cwd),
+				},
+			};
+		} catch {
+			return { kind: "error" };
 		}
-		const info: RuntimeInfo = {
-			name: runtime.name,
-			symbol: runtime.symbol,
-			style: runtime.style,
-			version: await runtime.version(cwd),
-		};
-		cacheRuntimeInfo(cwd, fingerprint, info);
-		return { kind: "ok", runtime: info };
-	} catch {
-		return { kind: "error" };
-	}
+	};
+	const pending = read()
+		.then((result) => {
+			// Clearing the cache must also invalidate outstanding writers.
+			if (epoch === cacheEpoch) cacheRuntimeInfo(cacheKey, result);
+			return result;
+		})
+		.finally(() => {
+			if (runtimeReadsInFlight.get(cacheKey) === pending) {
+				runtimeReadsInFlight.delete(cacheKey);
+			}
+		});
+	runtimeReadsInFlight.set(cacheKey, pending);
+	return pending;
 }

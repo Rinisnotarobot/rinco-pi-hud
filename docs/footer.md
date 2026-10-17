@@ -11,7 +11,7 @@ Activity · Agent idle · Skill 2/3 · MCP 2
 Usage    · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030
 ```
 
-The MCP segment counts server entries in Pi's agent-directory `mcp.json` and the project's `.pi/mcp.json`. Same-name entries count once; disabled entries are included. Zero entries hide the segment. Counts refresh with the project state polling interval. This does not report connection state, validate individual server settings, or include servers registered dynamically by extensions. Missing, unreadable, malformed, or larger-than-1-MiB files contribute no entries. Legacy adapter footer statuses remain ordinary third-party statuses.
+The MCP segment counts server entries in Pi's agent-directory `mcp.json` and the project's `.pi/mcp.json`. Same-name entries count once; disabled entries are included. This is a raw file-entry count: differently spelled names such as `my-server` and `my_server` remain separate, even though Pi may reject them as a namespace collision. Zero entries hide the segment. Counts refresh with the project state polling interval. This does not report connection state, validate individual server settings, or include servers registered dynamically by extensions. Missing, unreadable, malformed, or larger-than-1-MiB files contribute no entries. Legacy adapter footer statuses remain ordinary third-party statuses.
 
 The category column is sized from visible text so every separator aligns. When a row exceeds the terminal width, complete status segments move to an indented continuation line. Only a single segment that is wider than the available content area is truncated. Third-party extension statuses appear on the Activity group in configured `left`, `middle`, then `right` order.
 

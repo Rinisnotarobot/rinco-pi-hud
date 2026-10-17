@@ -7,24 +7,48 @@
  * variable (and nested group) renders empty.
  */
 
-export type FormatToken =
+export type FormatToken = Readonly<
 	| { kind: "text"; value: string }
 	| { kind: "var"; name: string }
 	| { kind: "fill" }
-	| { kind: "group"; tokens: FormatToken[] };
+	| { kind: "group"; tokens: readonly FormatToken[] }
+>;
+
+const FORMAT_CACHE_LIMIT = 128;
+const FORMAT_CACHE_MAX_LENGTH = 16384;
+const formatCache = new Map<string, readonly FormatToken[]>();
+
+function freezeTokens(tokens: readonly FormatToken[]): readonly FormatToken[] {
+	for (const token of tokens) {
+		if (token.kind === "group") freezeTokens(token.tokens);
+		Object.freeze(token);
+	}
+	return Object.freeze(tokens);
+}
 
 const TOKEN_REGEX = /\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}|\$([a-zA-Z_][a-zA-Z0-9_]*)/g;
 
 /**
- * Tokenize a format string into text/var/fill/group tokens.
+ * Tokenize a format string into deeply frozen text/var/fill/group tokens.
+ * Repeated bounded inputs reuse the same immutable AST; rendered values are never cached.
  *
  * `$name` and `${name}` both produce a variable token. A variable named
  * `fill` becomes a fill token instead. Parentheses form conditional groups
  * that drop entirely when all nested vars are empty.
  */
-export function parseFooterFormat(format: string): FormatToken[] {
-	if (!format) return [];
-	return parseTokenSlice(format, 0, format.length, true).tokens;
+export function parseFooterFormat(format: string): readonly FormatToken[] {
+	const cached = formatCache.get(format);
+	if (cached) return cached;
+	const tokens = freezeTokens(parseTokenSlice(format, 0, format.length, true).tokens);
+	// Bound both entry count and retained input size, including ad-hoc format strings.
+	if (format.length <= FORMAT_CACHE_MAX_LENGTH) {
+		if (formatCache.size >= FORMAT_CACHE_LIMIT) {
+			const oldest = formatCache.keys().next().value;
+			if (oldest !== undefined) formatCache.delete(oldest);
+		}
+		formatCache.set(format, tokens);
+	}
+	return tokens;
 }
 
 function parseTokenSlice(
@@ -112,7 +136,7 @@ function parseTokenSlice(
  * spaces are inserted — the user controls all spacing.
  */
 export function renderFormatSplit(
-	tokens: FormatToken[],
+	tokens: readonly FormatToken[],
 	renderVariable: (name: string) => string,
 ): { left: string; middle: string; right: string } {
 	const fillIndices = findTopLevelFillIndices(tokens);
@@ -151,7 +175,7 @@ export function renderFormatSplit(
 	};
 }
 
-function findTopLevelFillIndices(tokens: FormatToken[]): number[] {
+function findTopLevelFillIndices(tokens: readonly FormatToken[]): number[] {
 	const fillIndices: number[] = [];
 	for (let index = 0; index < tokens.length; index++) {
 		if (tokens[index]?.kind === "fill") fillIndices.push(index);
@@ -160,7 +184,7 @@ function findTopLevelFillIndices(tokens: FormatToken[]): number[] {
 }
 
 function renderTokenSlice(
-	tokens: FormatToken[],
+	tokens: readonly FormatToken[],
 	start: number,
 	end: number,
 	renderVariable: (name: string) => string,

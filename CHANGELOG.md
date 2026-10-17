@@ -4,6 +4,25 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-17
+
+### Changed
+
+- Require Pi 1.3.0–1.x and pin development Pi packages to 1.3.0.
+- Encode explicit RGB styles through Pi's public theme API for truecolor/256-color support.
+- Cache immutable footer-format ASTs and theme-independent style syntax with bounded storage.
+- Refresh clocks only when referenced by the visible layout; idle tool lists no longer tick.
+
+### Fixed
+
+- Handle user/custom `before_agent_start` events and nullable provider auth headers.
+- Include tool, standalone, compaction, and branch-summary usage in session token/cost totals.
+- Restore successful nested skill reads from persisted codemode tool results.
+- Accept current Pi foreground theme tokens, including `thinkingMax` and scrollbar/search colors.
+- Prevent stopped/restarted project refreshes from committing stale results.
+- Expire runtime-version caches and retry transient missing-version results.
+- Update the locked `source-map-js` dependency to resolve its indexed-source-map DoS advisory.
+
 ## [1.3.1]
 
 ### Fixed

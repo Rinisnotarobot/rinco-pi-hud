@@ -20,6 +20,8 @@ Rinco Pi HUD 用四组实时状态替换 Pi 的脚注行，不需要的部分都
 
 ## 安装
 
+需要 **Pi 1.3.0 或更新的 1.x 版本**。开发与 CI 依赖固定为 1.3.0。
+
 ```bash
 pi install npm:rinco-pi-hud
 ```
@@ -42,7 +44,7 @@ pi install "$PWD"
 > Pi 扩展以当前用户权限运行。安装任何第三方扩展前，请先审查其源码。
 
 > [!NOTE]
-> 脚注需要支持 Truecolor 的终端。上图用的是 ASCII 图标模式，`/zentui` 可以在 `auto`、`nerd`、`ascii` 三套符号之间切换。
+> 支持 Truecolor 和 256 色终端；显式 RGB 颜色通过 Pi 的终端能力适配接口输出。上图用的是 ASCII 图标模式，`/zentui` 可以在 `auto`、`nerd`、`ascii` 三套符号之间切换。
 
 ## 命令
 
@@ -154,7 +156,7 @@ npx tsx assets/readme/source/build-assets.mts /tmp/footer.json
 <details>
 <summary>颜色显示异常</summary>
 
-默认配色输出 `38;2;r;g;b` Truecolor 序列，不支持 Truecolor 的终端会近似处理或直接忽略。
+默认 RGB 配色跟随 Pi 检测到的终端颜色模式，必要时近似为 256 色。请检查终端能力配置，也可以在 `/zentui` 中切换到主题色源。
 </details>
 
 <details>

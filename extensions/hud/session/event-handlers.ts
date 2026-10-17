@@ -64,7 +64,9 @@ export function registerSessionEventHandlers(
 
 	pi.on("before_agent_start", (event, ctx) => {
 		deps.updateSkillCounts(ctx, event.systemPromptOptions.skills ?? []);
-		deps.skillActivity.activateFromPrompt(event.prompt, ctx.cwd);
+		if (event.messageType === "user") {
+			deps.skillActivity.activateFromPrompt(event.prompt, ctx.cwd);
+		}
 		deps.state.skillCounts = deps.skillActivity.counts();
 		deps.refreshInteractiveState(ctx);
 	});

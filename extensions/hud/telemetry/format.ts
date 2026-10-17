@@ -85,6 +85,7 @@ type SessionEntry = {
 	type?: string;
 	id?: string | number;
 	timestamp?: string | number;
+	usage?: AssistantMessage["usage"];
 	message?: {
 		role?: string;
 		usage?: AssistantMessage["usage"];
@@ -133,9 +134,22 @@ function calculateCacheHitRate(
 	return promptTokens > 0 ? (cacheRead / promptTokens) * 100 : undefined;
 }
 
+function entryUsage(entry: SessionEntry): AssistantMessage["usage"] | undefined {
+	if (entry.type === "usage" || entry.type === "compaction" || entry.type === "branch_summary") {
+		return entry.usage;
+	}
+	if (
+		entry.type === "message" &&
+		(entry.message?.role === "assistant" || entry.message?.role === "toolResult")
+	) {
+		return entry.message.usage;
+	}
+	return undefined;
+}
+
 function entryIdentity(entry: SessionEntry | undefined): string {
 	if (!entry) return "";
-	const usage = entry.message?.usage;
+	const usage = entryUsage(entry);
 	const usageKey = usage
 		? `${usage.input ?? 0}:${usage.output ?? 0}:${usage.cacheRead ?? 0}:${usage.cacheWrite ?? 0}:${usage.cost?.total ?? 0}`
 		: "";
@@ -158,8 +172,8 @@ function computeUsageTotals(entries: readonly SessionEntry[]): UsageTotals {
 	let cost = 0;
 
 	for (const entry of entries) {
-		if (entry.type !== "message" || entry.message?.role !== "assistant") continue;
-		const usage = entry.message.usage;
+		const usage = entryUsage(entry);
+		if (!usage) continue;
 		const entryInput = usage?.input ?? 0;
 		const entryCacheRead = usage?.cacheRead ?? 0;
 		const entryCacheWrite = usage?.cacheWrite ?? 0;
@@ -169,7 +183,9 @@ function computeUsageTotals(entries: readonly SessionEntry[]): UsageTotals {
 		cacheRead += entryCacheRead;
 		cacheWrite += entryCacheWrite;
 		cost += usage?.cost?.total ?? 0;
-		latestCacheHitRate = calculateCacheHitRate(entryInput, entryCacheRead, entryCacheWrite);
+		if (entry.type === "message" && entry.message?.role === "assistant") {
+			latestCacheHitRate = calculateCacheHitRate(entryInput, entryCacheRead, entryCacheWrite);
+		}
 	}
 
 	return Object.freeze({ input, output, cacheRead, cacheWrite, latestCacheHitRate, cost });

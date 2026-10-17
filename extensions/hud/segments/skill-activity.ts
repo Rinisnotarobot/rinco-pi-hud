@@ -119,13 +119,18 @@ export class SkillActivityTracker {
 				}
 				continue;
 			}
-			if (
-				message.role !== "toolResult" ||
-				message.toolName !== "read" ||
-				message.isError === true
-			) {
-				continue;
+			if (message.role !== "toolResult") continue;
+			// Nested calls are persisted on the outer result, even when that outer
+			// tool subsequently fails. Restore each successful read independently.
+			const nestedCalls = isRecord(message.nestedCalls) ? message.nestedCalls.calls : undefined;
+			if (Array.isArray(nestedCalls)) {
+				for (const call of nestedCalls) {
+					if (!isRecord(call) || call.name !== "read" || call.status !== "ok") continue;
+					const path = isRecord(call.args) ? call.args.path : undefined;
+					if (typeof path === "string") this.activateFromRead(path, cwd);
+				}
 			}
+			if (message.toolName !== "read" || message.isError === true) continue;
 			const id = typeof message.toolCallId === "string" ? message.toolCallId : undefined;
 			const path = id ? pendingReads.get(id) : undefined;
 			if (path) this.activateFromRead(path, cwd);

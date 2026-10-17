@@ -3,6 +3,7 @@ import registerCodexUsage from "./telemetry/codex-usage/index.js";
 import { ensureConfigExists, loadConfig, type PolishedTuiConfig } from "./config/config.js";
 import { installFooter } from "./footer/index.js";
 import { buildSessionDurationLabel } from "./telemetry/format.js";
+import { footerClockNeeds } from "./session/footer-clock.js";
 import { emptyGitStatus } from "./segments/git.js";
 import { LiveContextController } from "./session/live-context.js";
 import { createProjectStateController } from "./state/project-controller.js";
@@ -33,6 +34,7 @@ export default function (pi: ExtensionAPI) {
 	let footerInstalled = false;
 	let stopSessionTimer: () => void = () => {};
 	let lastDurationLabel = "";
+	let sessionTimerKey = "";
 
 	const refresh = () => {
 		if (sessionLifecycle.isCurrent()) requestFooterRender?.();
@@ -83,24 +85,29 @@ export default function (pi: ExtensionAPI) {
 	const refreshInteractiveState = (ctx: ExtensionContext, project = false) => {
 		if (!sessionLifecycle.isCurrent() || !ctx.hasUI) return;
 		syncFooterState(ctx);
+		startSessionTimer();
 		if (project && currentConfig.features.statusLine) scheduleProjectRefresh(ctx);
 		refresh();
 	};
 
 	const startSessionTimer = () => {
+		const needs = footerClockNeeds(
+			currentConfig,
+			state.telemetry.tools.some((tool) => tool.status === "running"),
+		);
+		const key = footerInstalled ? JSON.stringify(needs) : "";
+		if (sessionTimerKey === key) return;
 		stopSessionTimer();
-		lastDurationLabel = "";
-		const segments = currentConfig.footerSegments;
-		const format = currentConfig.footerFormat ?? "";
-		const needsWallClock = segments.time || /\$\{?time\b/.test(format);
-		const needsDuration =
-			segments.sessionDuration || /\$\{?(?:session_duration|duration)\b/.test(format);
-		const needsActivityClock = segments.runningTools || /\$\{?running_tools\b/.test(format);
-		if (
-			!currentConfig.features.statusLine ||
-			!(needsWallClock || needsDuration || needsActivityClock)
-		)
-			return;
+		sessionTimerKey = key;
+		lastDurationLabel = state.sessionStartEpoch
+			? buildSessionDurationLabel(state.sessionStartEpoch)
+			: "";
+		const {
+			wallClock: needsWallClock,
+			duration: needsDuration,
+			activity: needsActivityClock,
+		} = needs;
+		if (!footerInstalled || !(needsWallClock || needsDuration || needsActivityClock)) return;
 
 		const timer = setInterval(() => {
 			if (!sessionLifecycle.isCurrent()) return;
@@ -118,6 +125,7 @@ export default function (pi: ExtensionAPI) {
 		timer.unref?.();
 		stopSessionTimer = () => {
 			clearInterval(timer);
+			sessionTimerKey = "";
 			stopSessionTimer = () => {};
 		};
 	};

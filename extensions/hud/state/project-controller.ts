@@ -17,6 +17,7 @@ import {
 interface ProjectRefreshTarget {
 	cwd: string;
 	generation: number;
+	epoch: number;
 }
 
 export interface ProjectStateController {
@@ -42,9 +43,14 @@ export function createProjectStateController({
 }: ProjectStateControllerDeps): ProjectStateController {
 	let stopInterval: StopProjectRefreshInterval = () => {};
 	let lastProjectCwd: string | undefined;
+	let epoch = 0;
 
-	const refreshProjectState = async ({ cwd, generation }: ProjectRefreshTarget): Promise<void> => {
-		if (!lifecycle.isCurrent(generation)) return;
+	const refreshProjectState = async ({
+		cwd,
+		generation,
+		epoch: targetEpoch,
+	}: ProjectRefreshTarget): Promise<void> => {
+		if (targetEpoch !== epoch || !lifecycle.isCurrent(generation)) return;
 		const config = getConfig();
 		const format = config.footerFormat;
 		const formatNeedsTag = /\$\{?(?:git_tag|tag)\b/.test(format);
@@ -66,7 +72,7 @@ export function createProjectStateController({
 			wantPackage ? readPackageVersionResult(cwd) : Promise.resolve(undefined),
 			Promise.resolve(countConfigEntries(cwd)),
 		]);
-		if (!lifecycle.isCurrent(generation)) return;
+		if (targetEpoch !== epoch || !lifecycle.isCurrent(generation)) return;
 		state.configCounts = configCounts;
 		lastProjectCwd = applyProjectRefreshToState(state, {
 			cwd,
@@ -79,6 +85,8 @@ export function createProjectStateController({
 
 	const scheduler = createProjectRefreshScheduler(refreshProjectState, requestRender);
 	const stop = () => {
+		// Invalidate work even when the session lifecycle itself has not changed.
+		epoch += 1;
 		stopInterval();
 		stopInterval = () => {};
 		scheduler.stop();
@@ -86,11 +94,13 @@ export function createProjectStateController({
 	const schedule = (ctx: ExtensionContext, options?: ScheduleProjectRefreshOptions) => {
 		const generation = lifecycle.currentGeneration();
 		if (!lifecycle.isCurrent(generation)) return;
-		scheduler.schedule({ cwd: ctx.cwd, generation }, options);
+		scheduler.schedule({ cwd: ctx.cwd, generation, epoch }, options);
 	};
 
 	return {
 		reset() {
+			epoch += 1;
+			scheduler.stop();
 			lastProjectCwd = undefined;
 		},
 		schedule,

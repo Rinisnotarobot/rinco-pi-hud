@@ -20,6 +20,8 @@ Rinco Pi HUD takes over Pi's footer with four groups of live state and lets you 
 
 ## Install
 
+Requires Pi **1.3.0 or newer within the 1.x release line**. Development and CI dependencies are pinned to 1.3.0.
+
 ```bash
 pi install npm:rinco-pi-hud
 ```
@@ -42,7 +44,7 @@ pi install "$PWD"
 > Pi extensions run with your user permissions. Review the source before installing any third-party extension.
 
 > [!NOTE]
-> The footer needs a Truecolor terminal. The screenshot above renders with ASCII icon mode; `/zentui` switches between the `auto`, `nerd`, and `ascii` glyph sets.
+> Truecolor and 256-color terminals are supported; explicit RGB colors use Pi's terminal-capability-aware encoder. The screenshot above renders with ASCII icon mode; `/zentui` switches between the `auto`, `nerd`, and `ascii` glyph sets.
 
 ## Commands
 
@@ -154,7 +156,7 @@ The footer measures the terminal and wraps at segment boundaries, so narrow wind
 <details>
 <summary>Colors look incorrect</summary>
 
-The default palette emits `38;2;r;g;b` Truecolor sequences that terminals without Truecolor support approximate or ignore.
+The default RGB palette follows Pi's detected terminal color mode, with 256-color approximation when needed. Check terminal capability settings and try the theme color source in `/zentui`.
 </details>
 
 <details>

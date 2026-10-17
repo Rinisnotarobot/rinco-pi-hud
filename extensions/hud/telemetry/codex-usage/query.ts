@@ -195,10 +195,13 @@ function hasHeader(headers: Record<string, string>, name: string): boolean {
 	return Object.keys(headers).some((key) => key.toLowerCase() === name.toLowerCase());
 }
 
-function allowedAuthHeaders(source: Record<string, string>): Record<string, string> {
+function allowedAuthHeaders(source: Record<string, string | null>): Record<string, string> {
 	const allowed = new Set(["authorization", "chatgpt-account-id", "user-agent", "accept"]);
 	return Object.fromEntries(
-		Object.entries(source).filter(([key]) => allowed.has(key.toLowerCase())),
+		Object.entries(source).filter(
+			(entry): entry is [string, string] =>
+				allowed.has(entry[0].toLowerCase()) && typeof entry[1] === "string",
+		),
 	);
 }
 

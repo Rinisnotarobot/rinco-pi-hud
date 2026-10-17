@@ -1,8 +1,10 @@
-import type { ThemeColor } from "@earendil-works/pi-coding-agent";
+import type { ThemeColor, ThemeStyle } from "@earendil-works/pi-coding-agent";
+import type { Color } from "@earendil-works/pi-tui";
 import type { ColorSource, ColorSpec } from "../config/config.js";
 
 type ThemeLike = {
 	fg(color: string, text: string): string;
+	style?: (text: string, options: ThemeStyle) => string;
 	bold?: (text: string) => string;
 	italic?: (text: string) => string;
 	underline?: (text: string) => string;
@@ -126,6 +128,10 @@ const themeColorTokens = new Set<ThemeColor>([
 	"thinkingMedium",
 	"thinkingHigh",
 	"thinkingXhigh",
+	"thinkingMax",
+	"scrollbarTrack",
+	"scrollbarThumb",
+	"searchMatchText",
 	"bashMode",
 ]);
 
@@ -164,12 +170,14 @@ function isSupportedStyleToken(token: string): boolean {
 }
 
 export function isSupportedColorSpec(style: ColorSpec): boolean {
-	const trimmed = style.trim();
-	if (trimmed === "") return true;
-	return trimmed.split(/\s+/).every(isSupportedStyleToken);
+	return parseStyle(style).supported;
 }
 
-function applyThemeModifiers(theme: ThemeLike, styleTokens: string[], text: string): string {
+function applyThemeModifiers(
+	theme: ThemeLike,
+	styleTokens: readonly string[],
+	text: string,
+): string {
 	let rendered = text;
 	for (const token of styleTokens) {
 		const normalized = token.toLowerCase();
@@ -188,7 +196,7 @@ export function safeThemeFg(theme: ThemeLike, color: string, text: string): stri
 	}
 }
 
-function mapThemeColor(styleTokens: string[]): string | undefined {
+function mapThemeColor(styleTokens: readonly string[]): string | undefined {
 	let fallback: string | undefined;
 	for (const token of styleTokens) {
 		const normalized = token.toLowerCase();
@@ -212,35 +220,114 @@ function mapThemeColor(styleTokens: string[]): string | undefined {
  */
 export function colorize(theme: ThemeLike, color: ColorSpec, text: string): string {
 	if (isHexColor(color)) {
+		try {
+			if (theme.style) return theme.style(text, { fg: hexColor(color) });
+		} catch {
+			// Older/mock themes retain the original truecolor fallback.
+		}
 		return `${hexToAnsi(color)}${text}\x1b[39m`;
 	}
 	return safeThemeFg(theme, color, text);
 }
 
-/**
- * Render text with Starship-style terminal styling strings (e.g. "bold red", "fg:202",
- * "bg:blue", "underline bg:#bf5700").
- */
-export function renderTerminalStyle(style: string, text: string): string {
-	const codes: string[] = [];
-	for (const token of style.trim().split(/\s+/)) {
-		if (!token) continue;
+type ParsedStyle = {
+	readonly tokens: readonly string[];
+	readonly codes: string;
+	readonly options: Readonly<ThemeStyle>;
+	readonly hasHex: boolean;
+	readonly explicit: boolean;
+	readonly supported: boolean;
+};
 
+// Cache syntax only: never retain a Theme or themed ANSI across theme changes.
+const STYLE_CACHE_LIMIT = 256;
+const STYLE_CACHE_MAX_LENGTH = 4096;
+const styleCache = new Map<string, ParsedStyle>();
+
+function hexColor(hex: string): Color {
+	const normalized = expandHexColor(hex);
+	return Object.freeze({
+		kind: "rgb",
+		r: Number.parseInt(normalized.slice(0, 2), 16),
+		g: Number.parseInt(normalized.slice(2, 4), 16),
+		b: Number.parseInt(normalized.slice(4, 6), 16),
+	});
+}
+
+function parseStyle(style: string): ParsedStyle {
+	const cached = styleCache.get(style);
+	if (cached) return cached;
+	const tokens = Object.freeze(style.trim().split(/\s+/).filter(Boolean));
+	const codes: string[] = [];
+	const options: ThemeStyle = {};
+	let hasHex = false;
+	for (const token of tokens) {
 		const normalized = token.toLowerCase();
 		const modifier = terminalStyleModifiers.get(normalized);
 		if (modifier !== undefined) {
 			codes.push(`${modifier}`);
+			const attribute = normalized === "dimmed" ? "dim" : normalized;
+			if (
+				attribute === "bold" ||
+				attribute === "dim" ||
+				attribute === "italic" ||
+				attribute === "underline"
+			)
+				options[attribute] = true;
 			continue;
 		}
-
 		const isForeground = normalized.startsWith("fg:");
 		const isBackground = normalized.startsWith("bg:");
 		const colorName = isForeground || isBackground ? normalized.slice(3) : normalized;
-		const color = terminalColorToAnsi(colorName, isBackground);
-		if (color) codes.push(color);
+		const code = terminalColorToAnsi(colorName, isBackground);
+		if (!code) continue;
+		codes.push(code);
+		let color: Color;
+		if (isHexColor(colorName)) {
+			hasHex = true;
+			color = hexColor(colorName);
+		} else {
+			const named = terminalColorCodes.get(colorName);
+			color = Object.freeze({
+				kind: "indexed",
+				index: named === undefined ? Number(colorName) : named >= 90 ? named - 90 + 8 : named - 30,
+			});
+		}
+		options[isBackground ? "bg" : "fg"] = color;
 	}
+	const parsed = Object.freeze({
+		tokens,
+		codes: codes.join(";"),
+		options: Object.freeze(options),
+		hasHex,
+		explicit: tokens.some(isExplicitTerminalColorToken),
+		supported: tokens.every(isSupportedStyleToken),
+	});
+	if (style.length <= STYLE_CACHE_MAX_LENGTH) {
+		if (styleCache.size >= STYLE_CACHE_LIMIT) {
+			const oldest = styleCache.keys().next().value;
+			if (oldest !== undefined) styleCache.delete(oldest);
+		}
+		styleCache.set(style, parsed);
+	}
+	return parsed;
+}
 
-	return codes.length ? `\x1b[${codes.join(";")}m${text}\x1b[0m` : text;
+/**
+ * Render Starship terminal styles. With a Theme, explicit RGB uses its color-mode encoder;
+ * named/indexed-only styles and simple mocks retain the original terminal ANSI semantics.
+ */
+export function renderTerminalStyle(style: string, text: string, theme?: ThemeLike): string {
+	const parsed = parseStyle(style);
+	if (parsed.hasHex && theme?.style) {
+		try {
+			// Pass a fresh options object so a custom theme cannot mutate cached syntax.
+			return theme.style(text, { ...parsed.options });
+		} catch {
+			// Preserve terminal styling for partial/legacy theme implementations.
+		}
+	}
+	return parsed.codes ? `\x1b[${parsed.codes}m${text}\x1b[0m` : text;
 }
 
 /**
@@ -248,17 +335,16 @@ export function renderTerminalStyle(style: string, text: string): string {
  * legacy config values such as "accent" or "syntaxKeyword".
  */
 export function renderStyle(theme: ThemeLike, style: ColorSpec, text: string): string {
-	if (style.trim() === "") return text;
-	const styled = renderTerminalStyle(style, text);
+	if (parseStyle(style).tokens.length === 0) return text;
+	const styled = renderTerminalStyle(style, text, theme);
 	return styled === text ? colorize(theme, style, text) : styled;
 }
 
 export function renderThemeStyle(theme: ThemeLike, style: ColorSpec, text: string): string {
-	const trimmed = style.trim();
-	if (trimmed === "") return text;
-
-	const tokens = trimmed.split(/\s+/).filter(Boolean);
-	if (tokens.some(isExplicitTerminalColorToken)) return renderTerminalStyle(style, text);
+	const parsed = parseStyle(style);
+	const tokens = parsed.tokens;
+	if (tokens.length === 0) return text;
+	if (parsed.explicit) return renderTerminalStyle(style, text, theme);
 
 	const color = mapThemeColor(tokens) ?? "text";
 	return safeThemeFg(theme, color, applyThemeModifiers(theme, tokens, text));
