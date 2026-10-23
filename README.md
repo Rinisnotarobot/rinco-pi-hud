@@ -66,10 +66,10 @@ pi install "$PWD"
 | --- | --- |
 | **Project** | directory, git branch, commit and tag, working-tree status, operation state (`MERGING`, `REBASING`, …), diff metrics, runtime, package version, OS, user |
 | **Session** | session name, provider and model, thinking level, turn count, duration |
-| **Activity** | running tools, completed tool counts, active agents, `Agent idle`, skills, MCP servers |
+| **Activity** | running tools, completed tool counts, skills, MCP servers |
 | **Usage** | context window with a gauge, input and output tokens, cache read/write volume and hit rate, cost, model quota, clock |
 
-Rows are toggled with `/hud row usage disable`; the segments inside them have individual switches in the same UI. Existing configs that used the former aggregate `tokens`, `toolActivity`, or `agentActivity` switches are migrated automatically.
+Rows are toggled with `/hud row usage disable`; the segments inside them have individual switches in the same UI. Existing configs that used the former aggregate `tokens` or `toolActivity` switches are migrated automatically.
 
 ### Model quota
 
@@ -122,7 +122,7 @@ Footer features are adapted from Zentui **0.32.0**, without installing its edito
 | [`extensions/hud/ui/`](extensions/hud/ui/) | Icons and terminal style utilities |
 | [`docs/footer.md`](docs/footer.md) | Complete footer configuration reference |
 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Local development, testing guidance, and pull request checklist |
-| [`tests/`](tests/) | Vitest suite: footer layout, telemetry, provider balances, MCP configuration counts |
+| [`tests/`](tests/) | Vitest suite: footer layout, telemetry, provider balances, MCP runtime tool counts |
 
 ## Development
 

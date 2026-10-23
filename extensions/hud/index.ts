@@ -9,6 +9,7 @@ import { CustomVariables } from "./segments/custom-variables.js";
 import { createLiveMetadata } from "./segments/live-metadata.js";
 import { FooterTelemetryController } from "./telemetry/optional.js";
 import { emptyGitStatus } from "./segments/git.js";
+import { getMcpServerCount } from "./segments/mcp-status.js";
 import { LiveContextController } from "./session/live-context.js";
 import { createProjectStateController } from "./state/project-controller.js";
 import { isLiveExtensionContext } from "./session/context.js";
@@ -200,6 +201,7 @@ export default function (pi: ExtensionAPI) {
 				getActiveExtensionStatuses = fn ?? (() => new Map());
 			},
 			getLiveContext: () => liveContext.get(),
+			getMcpServerCount: () => getMcpServerCount(pi),
 			getCustomValues: () => customVariables.snapshot(),
 			getTemplateValues: () => new Map([...templateValues, ...metadata.values()]),
 			setOwnership(owned) {

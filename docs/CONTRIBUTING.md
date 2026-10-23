@@ -50,7 +50,8 @@ npm run pack:check
 
 Tests live in `tests/`:
 
-- `zentui-status.test.ts` — Config counts, MCP configuration counts, and extension status helpers.
+- `zentui-status.test.ts` — Config counts, telemetry, and skill activity.
+- `mcp-status.test.ts` — Pi runtime MCP namespaces, exposure filtering, and dynamic tool changes.
 - `mcp-footer.test.ts` — MCP count rendering, segment controls, custom formats, and legacy third-party statuses.
 - `codex-usage.test.ts` — Codex payload normalization and model-specific quota formatting.
 - `footer-layout.test.ts` — Four-group categorized layout, segment wrapping, and narrow-width budget.

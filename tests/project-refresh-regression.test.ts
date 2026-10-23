@@ -17,7 +17,6 @@ vi.mock("../extensions/hud/config/config-counts.ts", () => ({
 	countConfigEntries: vi.fn(() => ({
 		instructionFiles: { agentsMd: 1, claudeMd: 0, total: 1 },
 		packages: 2,
-		mcpServers: 3,
 	})),
 }));
 

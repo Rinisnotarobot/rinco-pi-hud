@@ -7,11 +7,11 @@ When `footerFormat` is empty, the HUD displays four semantic groups:
 ```text
 Project  · pi-sakura ·  main ·  24.18
 Session  · gpt-5.3 · Thinking level: high · Turn 8
-Activity · Agent idle · Skill 2/3 · MCP 2
+Activity · Tool read × 4 · Skill 2/3 · MCP 2
 Usage    · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030
 ```
 
-The MCP segment counts server entries in Pi's agent-directory `mcp.json` and the project's `.pi/mcp.json`. Same-name entries count once; disabled entries are included. This is a raw file-entry count: differently spelled names such as `my-server` and `my_server` remain separate, even though Pi may reject them as a namespace collision. Zero entries hide the segment. Counts refresh with the project state polling interval. This does not report connection state, validate individual server settings, or include servers registered dynamically by extensions. Missing, unreadable, malformed, or larger-than-1-MiB files contribute no entries. Legacy adapter footer statuses remain ordinary third-party statuses.
+The MCP segment uses Pi's public `pi.getAllTools()` API to count unique MCP namespaces with non-hidden registered tools, including direct, codemode, and deferred exposure. It includes file-configured and dynamically registered servers without reading `mcp.json`, resolving credentials, or creating connections. Hidden tools left behind after disabling or removing a server do not count. The value is read on each footer render (including normal project refreshes); zero hides the segment. This is a runtime tool-availability count, not a connection-health or configured-server count: resource-only servers and servers with no exposed tools are omitted, and a disconnected server may retain registered tools. Use Pi's `/mcp` for full connection status. `pi.getMcpServers()` is not used because it only lists extension registrations, not all configured servers. Legacy adapter footer statuses remain ordinary third-party statuses.
 
 The category column is sized from visible text so every separator aligns. When a row exceeds the terminal width, complete status segments move to an indented continuation line. Only a single segment that is wider than the available content area is truncated. Third-party extension statuses appear on the Activity group in configured `left`, `middle`, then `right` order.
 
@@ -107,10 +107,8 @@ Entries you explicitly set under `colors` override the selected defaults. Semant
 | `sessionDuration` | off | Session | Current session duration |
 | `runningTools` | on | Activity | Currently running native tools and elapsed time |
 | `toolCounts` | on | Activity | Cumulative completed native-tool counts |
-| `activeAgents` | on | Activity | Active primary agent runs |
-| `agentIdle` | on | Activity | `Agent idle` when no primary agent run is active |
 | `skills` | on | Activity | Active/available skills count, e.g. `Skill 1/3` |
-| `mcp` | on | Activity | File-configured MCP servers, e.g. `MCP 2` |
+| `mcp` | on | Activity | MCP namespaces with exposed runtime tools, e.g. `MCP 2` |
 | `context` | on | Usage | Context percentage, window size, and/or gauge |
 | `inputTokens` | on | Usage | Cumulative input tokens |
 | `outputTokens` | on | Usage | Cumulative output tokens |
@@ -185,10 +183,9 @@ the separator already owns spacing. Templates without it retain their previous b
 | `$skills` | Active/available skills, e.g. `Skill 1/3` |
 | `$active_skills` | Active skills count only |
 | `$extensions` | Installed Pi packages count |
-| `$mcp` | File-configured MCP server count |
+| `$mcp` | MCP namespace count from Pi's exposed runtime tools |
 | `$tool_counts` | Native tool completion counts |
 | `$running_tools` | Recently running tools |
-| `$active_agents` | Active primary agent runs |
 | `$subscription` | Optional `(sub)` when Pi reports OAuth subscription use (also kimi-coding) |
 | `$auto_compaction` | Optional `(auto)` when public, trust-aware Pi settings report automatic compaction |
 | `$pr_number` / `$pr_url` | Current open GitHub PR number / plain HTTPS URL, qualified against local HEAD |
@@ -215,7 +212,6 @@ $codex_quota → $codex_usage
 $turn_count → $turn
 $codex → $codex_usage
 $tools → $tool_counts
-$agents → $active_agents
 $separator → $sep
 ```
 

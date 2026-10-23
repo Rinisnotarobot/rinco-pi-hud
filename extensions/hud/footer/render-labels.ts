@@ -151,18 +151,17 @@ export type TelemetryLabels = {
 	mcpLabel: string;
 	toolCountsLabel: string;
 	runningToolsLabel: string;
-	activeAgentsLabel: string;
-	agentIdleLabel: string;
 };
 
 /** Build every session/activity/usage-row telemetry label (model, thinking level,
- * turn count, cache/tool/agent counters, skills, MCP, Codex usage, …). */
+ * turn count, cache/tool counters, skills, MCP, Codex usage, …). */
 export function buildTelemetryLabels(
 	ctx: Pick<ExtensionContext, "model">,
 	state: FooterState,
 	config: PolishedTuiConfig,
 	theme: ThemeLike,
 	colorSource: ColorSource,
+	mcpServerCount = 0,
 ): TelemetryLabels {
 	const statusStyle = (style: string, text: string) =>
 		text ? renderStyleForSource(theme, colorSource, style, text) : "";
@@ -266,9 +265,7 @@ export function buildTelemetryLabels(
 	const configCountsLabel = [instructionFilesLabel, extensionsLabel].filter(Boolean).join(" ");
 
 	const mcpLabel =
-		state.configCounts.mcpServers > 0
-			? statusStyle(config.colors.gitStatus, `MCP ${state.configCounts.mcpServers}`)
-			: "";
+		mcpServerCount > 0 ? statusStyle(config.colors.gitStatus, `MCP ${mcpServerCount}`) : "";
 
 	const telemetryStats = getTelemetryStats(state.telemetry);
 	const toolCountsText = Object.entries(telemetryStats.completedToolCounts)
@@ -286,12 +283,6 @@ export function buildTelemetryLabels(
 		})
 		.join(" ");
 	const runningToolsLabel = statusStyle(config.colors.contextWarning, runningToolsText);
-	const activeAgentsLabel =
-		telemetryStats.activeAgentRuns > 0
-			? statusStyle(config.colors.extensionStatus, `Agent × ${telemetryStats.activeAgentRuns}`)
-			: "";
-	const agentIdleLabel =
-		telemetryStats.activeAgentRuns === 0 ? statusStyle(config.colors.muted, "Agent idle") : "";
 
 	return {
 		projectCategoryLabel,
@@ -322,7 +313,5 @@ export function buildTelemetryLabels(
 		mcpLabel,
 		toolCountsLabel,
 		runningToolsLabel,
-		activeAgentsLabel,
-		agentIdleLabel,
 	};
 }

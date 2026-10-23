@@ -13,7 +13,7 @@ test("default footer composes four aligned semantic groups", () => {
 		{
 			project: ["Project", "pi-sakura", "main", "Node 24"],
 			session: ["Session", "gpt-5.3", "Thinking level: medium", "Turn 4", "Duration 2m"],
-			activity: ["Activity", "Tool read × 4", "Agent idle", "Skill 2/3", "MCP 2/2"],
+			activity: ["Activity", "Tool read × 4", "Skill 2/3", "MCP 2/2"],
 			usage: ["Usage", "35%/200k", "↑ 4.2k", "↓ 1.1k", "$ 0.030", "Time 20:05"],
 		},
 		separator,
@@ -23,7 +23,7 @@ test("default footer composes four aligned semantic groups", () => {
 	assert.deepEqual(rows, [
 		"Project  · pi-sakura · main · Node 24",
 		"Session  · gpt-5.3 · Thinking level: medium · Turn 4 · Duration 2m",
-		"Activity · Tool read × 4 · Agent idle · Skill 2/3 · MCP 2/2",
+		"Activity · Tool read × 4 · Skill 2/3 · MCP 2/2",
 		"Usage    · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030 · Time 20:05",
 	]);
 	assert.equal(
@@ -40,7 +40,7 @@ test("categorized footer wraps complete segments onto aligned continuation lines
 	const groups = {
 		project: ["Project", "alpha-project", "main", "Node 24"],
 		session: ["Session", "gpt-5.3", "Thinking level: medium", "Turn 4"],
-		activity: ["Activity", "Tool read", "Agent idle", "Skill 2/3", "MCP 2/2"],
+		activity: ["Activity", "Tool read", "Skill 2/3", "MCP 2/2"],
 		usage: ["Usage", "35%/200k", "↑ 4.2k ↓ 1.1k", "R 2k W 1k", "$ 0.030"],
 	};
 	const rows = composeCategorizedFooterRows(groups, separator, 34);
@@ -117,13 +117,13 @@ test("telemetry labels use the four English groups and readable activity labels"
 			configCounts: {
 				instructionFiles: { agentsMd: 0, claudeMd: 0, total: 0 },
 				packages: 0,
-				mcpServers: 2,
 			},
 			skillCounts: { active: 2, total: 3 },
 		} as never,
 		unstyledConfig,
 		{ fg: (_color: string, text: string) => text },
 		"theme",
+		2,
 	);
 
 	assert.deepEqual(
@@ -138,8 +138,8 @@ test("telemetry labels use the four English groups and readable activity labels"
 	assert.equal(labels.thinkingLabel, "Thinking level: medium");
 	assert.equal(labels.turnLabel, "Turn 4");
 	assert.equal(labels.toolCountsLabel, "Tool read");
-	assert.equal(labels.activeAgentsLabel, "");
-	assert.equal(labels.agentIdleLabel, "Agent idle");
+	assert.equal(Object.hasOwn(labels, "activeAgentsLabel"), false);
+	assert.equal(Object.hasOwn(labels, "agentIdleLabel"), false);
 	assert.equal(labels.inputTokensLabel, "↑ 4.2k");
 	assert.equal(labels.outputTokensLabel, "↓ 1.1k");
 	assert.equal(labels.skillsLabel, "Skill 2/3");

@@ -1,31 +1,28 @@
-import { readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-const MAX_CONFIG_BYTES = 1024 * 1024;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function readServerNames(path: string): string[] {
+/** Count MCP namespaces with exposed runtime tools, not configuration entries or connections.
+ * Pi owns configuration, trust, credentials, and connections. getMcpServers() only lists
+ * extension registrations, whereas getAllTools() includes tools from file-configured servers
+ * and extensions, including codemode/deferred tools absent from the active tool set.
+ * Hidden tools remain registered after a server is disabled or removed, so exclude them.
+ * Resource-only servers cannot be identified through this public API and are not counted.
+ */
+export function getMcpServerCount(pi: Pick<ExtensionAPI, "getAllTools">): number {
 	try {
-		const stats = statSync(path);
-		if (!stats.isFile() || stats.size > MAX_CONFIG_BYTES) return [];
-		const config: unknown = JSON.parse(readFileSync(path, "utf8"));
-		if (!isRecord(config) || !isRecord(config.mcpServers)) return [];
-		return Object.entries(config.mcpServers)
-			.filter(([name, entry]) => /^[A-Za-z0-9_-]+$/.test(name) && isRecord(entry))
-			.map(([name]) => name);
+		const namespaces = new Set<string>();
+		for (const tool of pi.getAllTools()) {
+			const namespace = tool.namespace?.name;
+			if (
+				tool.exposure !== "hidden" &&
+				namespace &&
+				/^mcp__[A-Za-z0-9_]+$/.test(namespace) &&
+				tool.name.startsWith(`${namespace}__`)
+			) {
+				namespaces.add(namespace);
+			}
+		}
+		return namespaces.size;
 	} catch {
-		return [];
+		return 0;
 	}
-}
-
-/** Count file-configured server entries, including disabled ones, without resolving secrets
- * or starting connections. Project entries override global entries with the same name.
- * This is not a connection count or a validation of individual server settings. */
-export function countConfiguredMcpServers(cwd: string, agentDir: string): number {
-	const globalNames = agentDir ? readServerNames(join(agentDir, "mcp.json")) : [];
-	const projectNames = readServerNames(join(cwd, ".pi", "mcp.json"));
-	return new Set([...globalNames, ...projectNames]).size;
 }

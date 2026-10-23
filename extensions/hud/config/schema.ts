@@ -79,8 +79,6 @@ export type FooterSegmentsConfig = {
 	mcp: boolean;
 	runningTools: boolean;
 	toolCounts: boolean;
-	activeAgents: boolean;
-	agentIdle: boolean;
 };
 
 export type ExtensionStatusPlacement = "off" | "left" | "middle" | "right";
@@ -206,7 +204,6 @@ export const FOOTER_FORMAT_VARIABLES = [
 	"mcp",
 	"tool_counts",
 	"running_tools",
-	"active_agents",
 	"sep",
 	"join_sep",
 	"extension_statuses",
@@ -237,7 +234,6 @@ export const FOOTER_FORMAT_ALIASES: Record<string, string> = {
 	turn_count: "turn",
 	codex: "codex_usage",
 	tools: "tool_counts",
-	agents: "active_agents",
 	separator: "sep",
 };
 
@@ -349,8 +345,6 @@ export const defaultConfig: PolishedTuiConfig = {
 		mcp: true,
 		runningTools: true,
 		toolCounts: true,
-		activeAgents: true,
-		agentIdle: true,
 	},
 	gitCommit: {
 		hashLength: 7,

@@ -166,7 +166,7 @@ function footerSegmentValue(
 function footerSegmentValueWithLegacy(
 	record: Record<string, unknown>,
 	key: keyof FooterSegmentsConfig,
-	legacyKey: "tokens" | "toolActivity" | "agentActivity",
+	legacyKey: "tokens" | "toolActivity",
 ): boolean {
 	const value = record[key];
 	if (typeof value === "boolean") return value;
@@ -268,8 +268,6 @@ function normalizeFooterSegments(record: Record<string, unknown>): FooterSegment
 		mcp: footerSegmentValue(record, "mcp"),
 		runningTools: footerSegmentValueWithLegacy(record, "runningTools", "toolActivity"),
 		toolCounts: footerSegmentValueWithLegacy(record, "toolCounts", "toolActivity"),
-		activeAgents: footerSegmentValueWithLegacy(record, "activeAgents", "agentActivity"),
-		agentIdle: footerSegmentValueWithLegacy(record, "agentIdle", "agentActivity"),
 	};
 }
 

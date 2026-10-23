@@ -132,10 +132,8 @@ const footerSegmentSettingLabels: Record<FooterSegmentSettingId, string> = {
 	sessionDuration: "Session duration",
 	runningTools: "Running tools",
 	toolCounts: "Completed tool counts",
-	activeAgents: "Active agents",
-	agentIdle: "Agent idle status",
 	skills: "Skill activity",
-	mcp: "MCP configured servers",
+	mcp: "MCP runtime servers",
 	context: "Context usage",
 	inputTokens: "Input tokens",
 	outputTokens: "Output tokens",
@@ -175,11 +173,9 @@ const footerSegmentSettingDescriptions: Record<FooterSegmentSettingId, string> =
 	codexUsage: "Show OpenAI Codex subscription rate limits on the usage row when available.",
 	configCounts: "Show instruction-file and installed Pi package counts on the project row.",
 	skills: "Show active/available Pi skill counts on the activity row.",
-	mcp: "Show the configured server count from global and project mcp.json, including disabled entries.",
+	mcp: "Show MCP servers with exposed runtime tools reported by Pi.",
 	runningTools: "Show currently running native tools and their elapsed time.",
 	toolCounts: "Show cumulative completed native-tool counts.",
-	activeAgents: "Show active main agent runs on the activity row (not subagent count).",
-	agentIdle: "Show Agent idle when no main agent run is active.",
 };
 
 const directCommandSuggestions = [
@@ -257,9 +253,7 @@ function isFooterSegmentSettingId(value: string): value is FooterSegmentSettingI
 		value === "skills" ||
 		value === "mcp" ||
 		value === "runningTools" ||
-		value === "toolCounts" ||
-		value === "activeAgents" ||
-		value === "agentIdle"
+		value === "toolCounts"
 	);
 }
 

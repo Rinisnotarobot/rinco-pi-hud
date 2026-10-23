@@ -75,9 +75,7 @@ function isFooterSegmentKey(value: string): value is keyof FooterSegmentsConfig 
 		value === "skills" ||
 		value === "mcp" ||
 		value === "runningTools" ||
-		value === "toolCounts" ||
-		value === "activeAgents" ||
-		value === "agentIdle"
+		value === "toolCounts"
 	);
 }
 

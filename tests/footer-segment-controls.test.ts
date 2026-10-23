@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "vitest";
 import { mergeConfig } from "../extensions/hud/config/normalize.ts";
+import { FOOTER_FORMAT_ALIASES, FOOTER_FORMAT_VARIABLES } from "../extensions/hud/config/schema.ts";
 import { saveFooterSegmentsPatch } from "../extensions/hud/config/persist.ts";
 
 test("new footer status controls inherit disabled legacy aggregate controls", () => {
@@ -19,8 +20,6 @@ test("new footer status controls inherit disabled legacy aggregate controls", ()
 	assert.equal(config.footerSegments.outputTokens, false);
 	assert.equal(config.footerSegments.runningTools, false);
 	assert.equal(config.footerSegments.toolCounts, false);
-	assert.equal(config.footerSegments.activeAgents, false);
-	assert.equal(config.footerSegments.agentIdle, false);
 });
 
 test("independent footer status controls override legacy aggregate values", () => {
@@ -30,8 +29,6 @@ test("independent footer status controls override legacy aggregate values", () =
 			inputTokens: true,
 			toolActivity: false,
 			runningTools: true,
-			agentActivity: false,
-			agentIdle: true,
 			gitState: false,
 		},
 	});
@@ -40,9 +37,21 @@ test("independent footer status controls override legacy aggregate values", () =
 	assert.equal(config.footerSegments.outputTokens, false);
 	assert.equal(config.footerSegments.runningTools, true);
 	assert.equal(config.footerSegments.toolCounts, false);
-	assert.equal(config.footerSegments.activeAgents, false);
-	assert.equal(config.footerSegments.agentIdle, true);
 	assert.equal(config.footerSegments.gitState, false);
+});
+
+test("removed agent status controls are ignored and no longer built in", () => {
+	const config = mergeConfig({
+		footerSegments: { activeAgents: true, agentIdle: true, agentActivity: true },
+	});
+	for (const key of ["activeAgents", "agentIdle", "agentActivity"]) {
+		assert.equal(Object.hasOwn(config.footerSegments, key), false);
+	}
+	assert.equal(
+		FOOTER_FORMAT_VARIABLES.some((name) => String(name) === "active_agents"),
+		false,
+	);
+	assert.equal(Object.hasOwn(FOOTER_FORMAT_ALIASES, "agents"), false);
 });
 
 test("new footer status controls persist independently", async () => {
@@ -54,8 +63,6 @@ test("new footer status controls persist independently", async () => {
 				gitState: false,
 				runningTools: false,
 				toolCounts: true,
-				activeAgents: true,
-				agentIdle: false,
 				inputTokens: false,
 				outputTokens: true,
 			},
@@ -65,8 +72,6 @@ test("new footer status controls persist independently", async () => {
 		assert.equal(config.footerSegments.gitState, false);
 		assert.equal(config.footerSegments.runningTools, false);
 		assert.equal(config.footerSegments.toolCounts, true);
-		assert.equal(config.footerSegments.activeAgents, true);
-		assert.equal(config.footerSegments.agentIdle, false);
 		assert.equal(config.footerSegments.inputTokens, false);
 		assert.equal(config.footerSegments.outputTokens, true);
 	} finally {

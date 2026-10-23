@@ -36,7 +36,7 @@ No extra runtime dependency is installed. Pi 1.3–1.x remains supported.
 - Keep the independent, flat `~/.pi/agent/rinco-pi-hud.json` schema. Upstream
   `components.footer.styles.starship` objects are not automatically imported.
 - Keep existing theme defaults, legacy configuration migration, and all HUD counters, skills,
-  MCP file counts, model/provider labels, live context and usage totals.
+  MCP runtime tool counts, model/provider labels, live context and usage totals.
 - Keep the existing Codex quota client and DeepSeek / Token Switch balance probes.
   `$codex_quota` is a compatibility alias for `$codex_usage`, not a new collector.
   Upstream's separate official-OpenAI response-header quota collector is not installed.

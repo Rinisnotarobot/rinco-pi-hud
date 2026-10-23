@@ -26,8 +26,6 @@ export interface ActivityFooterSegments {
 	category: string;
 	runningTools: string;
 	toolCounts: string;
-	activeAgents: string;
-	agentIdle: string;
 	skills: string;
 	mcp: string;
 	extensions: readonly string[];
@@ -84,8 +82,6 @@ export function buildCategorizedFooterGroups(
 			input.activity.category,
 			input.activity.runningTools,
 			input.activity.toolCounts,
-			input.activity.activeAgents,
-			input.activity.agentIdle,
 			input.activity.skills,
 			input.activity.mcp,
 			...input.activity.extensions,

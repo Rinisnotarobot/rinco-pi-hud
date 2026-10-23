@@ -79,18 +79,10 @@ export function registerSessionEventHandlers(
 
 	pi.on("agent_start", (event, ctx) => {
 		deps.liveContext.clear();
-		deps.state.telemetry = updateTelemetryState(deps.state.telemetry, {
-			type: "agent-start",
-			at: Date.now(),
-		});
 		syncInteractiveState(event, ctx);
 	});
 	pi.on("agent_end", (event, ctx) => {
 		deps.liveContext.clear();
-		deps.state.telemetry = updateTelemetryState(deps.state.telemetry, {
-			type: "agent-end",
-			at: Date.now(),
-		});
 		syncInteractiveAndProjectState(event, ctx);
 	});
 	pi.on("model_select", (event, ctx) => {

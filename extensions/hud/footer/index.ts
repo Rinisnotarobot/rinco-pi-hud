@@ -53,6 +53,7 @@ export function installFooter(
 		scheduleProjectRefresh: (ctx: ExtensionContext) => void;
 		setExtensionStatusesGetter?: (fn: (() => ReadonlyMap<string, string>) | undefined) => void;
 		getLiveContext?: () => LiveContextOverride | undefined;
+		getMcpServerCount?: () => number;
 		getCustomValues?: () => ReadonlyMap<string, string>;
 		getTemplateValues?: () => ReadonlyMap<string, string>;
 		setOwnership?: (owned: boolean) => void;
@@ -200,9 +201,14 @@ export function installFooter(
 					mcpLabel,
 					toolCountsLabel,
 					runningToolsLabel,
-					activeAgentsLabel,
-					agentIdleLabel,
-				} = buildTelemetryLabels(ctx, state, config, theme, colorSource);
+				} = buildTelemetryLabels(
+					ctx,
+					state,
+					config,
+					theme,
+					colorSource,
+					hooks.getMcpServerCount?.() ?? 0,
+				);
 				const rawCustomValues = hooks.getCustomValues?.() ?? new Map<string, string>();
 				const customValues = new Map<string, string>();
 				for (const [alias, key] of Object.entries(config.footerVariables)) {
@@ -391,8 +397,6 @@ export function installFooter(
 							return toolCountsLabel;
 						case "running_tools":
 							return runningToolsLabel;
-						case "active_agents":
-							return activeAgentsLabel || agentIdleLabel;
 						case "subscription":
 						case "auto_compaction":
 						case "pr_number":
@@ -594,8 +598,6 @@ export function installFooter(
 						category: activityCategoryLabel,
 						runningTools: config.footerSegments.runningTools ? runningToolsLabel : "",
 						toolCounts: config.footerSegments.toolCounts ? toolCountsLabel : "",
-						activeAgents: config.footerSegments.activeAgents ? activeAgentsLabel : "",
-						agentIdle: config.footerSegments.agentIdle ? agentIdleLabel : "",
 						skills: config.footerSegments.skills ? skillsLabel : "",
 						mcp: config.footerSegments.mcp ? mcpLabel : "",
 						extensions: [...extensionLeft, ...extensionMiddle, ...extensionRight],

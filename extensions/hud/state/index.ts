@@ -45,7 +45,6 @@ export function createInitialState(gitDefaults: GitStatusSummary): FooterState {
 		configCounts: {
 			instructionFiles: { agentsMd: 0, claudeMd: 0, total: 0 },
 			packages: 0,
-			mcpServers: 0,
 		},
 		skillCounts: undefined,
 		codexUsageStatus: undefined,

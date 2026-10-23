@@ -1,4 +1,4 @@
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, ToolInfo } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { mergeConfig } from "../extensions/hud/config/normalize.ts";
 import type { PolishedTuiConfig } from "../extensions/hud/config/schema.ts";
@@ -36,6 +36,7 @@ function harness() {
 	const bus = new Map<string, Array<(value: unknown) => void>>();
 	let component: ReturnType<Factory> | undefined;
 	const exec = vi.fn(async () => ({ code: 1, stdout: "", stderr: "", killed: false }));
+	const getAllTools = vi.fn<() => ToolInfo[]>(() => []);
 	const pi = {
 		on(name: string, handler: Handler) {
 			handlers.set(name, [...(handlers.get(name) ?? []), handler]);
@@ -45,6 +46,7 @@ function harness() {
 				bus.set(name, [...(bus.get(name) ?? []), handler]);
 			},
 		},
+		getAllTools,
 		getCommands: () => [],
 		getThinkingLevel: () => "off",
 		exec,
@@ -68,6 +70,7 @@ function harness() {
 	registerHud(pi);
 	return {
 		exec,
+		getAllTools,
 		ctx,
 		emit: async (name: string) => {
 			for (const handler of handlers.get(name) ?? []) await handler({}, ctx);
@@ -147,5 +150,22 @@ it("never runs GitHub for defaults, hidden/native mode or a publisher-owned ci a
 	h.configure({ footerFormat: "$ci" });
 	await Promise.resolve();
 	expect(h.exec).toHaveBeenCalled();
+	await h.emit("session_shutdown");
+});
+
+it("wires MCP rendering to Pi's current tool registry rather than project refresh state", async () => {
+	const h = harness();
+	h.configure({ footerFormat: "$mcp" });
+	await h.emit("session_start");
+	expect(h.render().trim()).toBe("");
+	const tool = {
+		name: "mcp__runtime__search",
+		namespace: { name: "mcp__runtime" },
+		exposure: "codemode",
+	} as ToolInfo;
+	h.getAllTools.mockReturnValue([tool]);
+	expect(h.render().trim()).toBe("MCP 1");
+	h.getAllTools.mockReturnValue([{ ...tool, exposure: "hidden" }]);
+	expect(h.render().trim()).toBe("");
 	await h.emit("session_shutdown");
 });

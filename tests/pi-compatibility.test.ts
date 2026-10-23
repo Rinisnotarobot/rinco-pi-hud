@@ -110,6 +110,28 @@ describe("Pi 1.3 compatibility", () => {
 		expect(headers.get("cookie")).toBeNull();
 		expect(headers.get("chatgpt-account-id")).toBe("account");
 	});
+	it("agent boundaries clear live context and refresh without changing telemetry", () => {
+		const handlers = new Map<string, (event: unknown, ctx: unknown) => void>();
+		const telemetry = Object.freeze({ tools: [] });
+		const state = { telemetry };
+		const clear = vi.fn();
+		const refreshInteractiveState = vi.fn();
+		registerSessionEventHandlers(
+			{
+				on: (name: string, fn: (event: unknown, ctx: unknown) => void) => handlers.set(name, fn),
+			} as never,
+			{ state, liveContext: { clear }, refreshInteractiveState } as never,
+		);
+		const ctx = { cwd: "/tmp" };
+		handlers.get("agent_start")!({}, ctx);
+		expect(clear).toHaveBeenCalledTimes(1);
+		expect(refreshInteractiveState).toHaveBeenLastCalledWith(ctx);
+		expect(state.telemetry).toBe(telemetry);
+		handlers.get("agent_end")!({}, ctx);
+		expect(clear).toHaveBeenCalledTimes(2);
+		expect(refreshInteractiveState).toHaveBeenLastCalledWith(ctx, true);
+		expect(state.telemetry).toBe(telemetry);
+	});
 	it("only parses user prompts in before_agent_start", () => {
 		const handlers = new Map<string, (event: unknown, ctx: unknown) => void>();
 		const activateFromPrompt = vi.fn();

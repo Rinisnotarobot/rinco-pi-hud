@@ -4,7 +4,6 @@ export const TRACKED_TOOL_NAMES = ["read", "write", "edit", "bash", "grep", "ls"
 
 export type TrackedToolName = (typeof TRACKED_TOOL_NAMES)[number];
 export type ToolStatus = "running" | "completed" | "error";
-export type AgentRunStatus = "running" | "completed";
 
 export interface ToolRecord {
 	toolCallId: string;
@@ -15,19 +14,12 @@ export interface ToolRecord {
 	endTime?: number;
 }
 
-export interface AgentRunRecord {
-	status: AgentRunStatus;
-	startTime: number;
-	endTime?: number;
-}
-
 export interface TelemetryState {
 	sessionName: string | undefined;
 	turnIndex: number;
 	thinkingLevel: string;
 	modelSupportsReasoning: boolean;
 	tools: readonly ToolRecord[];
-	agentRuns: readonly AgentRunRecord[];
 }
 
 export interface TelemetryInitialValues {
@@ -47,21 +39,16 @@ export type TelemetryUpdate =
 			args?: Record<string, unknown> | null;
 			at: number;
 	  }
-	| { type: "tool-result"; toolCallId: string; isError: boolean; at: number }
-	| { type: "agent-start"; at: number }
-	| { type: "agent-end"; at: number };
+	| { type: "tool-result"; toolCallId: string; isError: boolean; at: number };
 
 export interface TelemetryStats {
 	completedToolCounts: Record<TrackedToolName, number>;
 	recentRunningTools: readonly ToolRecord[];
-	activeAgentRuns: number;
 }
 
 const trackedToolNames = new Set<string>(TRACKED_TOOL_NAMES);
 const TOOL_HISTORY_LIMIT = 500;
 const TOOL_HISTORY_RETAINED = 400;
-const AGENT_HISTORY_LIMIT = 500;
-const AGENT_HISTORY_RETAINED = 400;
 const MAX_EXTERNAL_TEXT_LENGTH = 2048;
 const thinkingLevels = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
 
@@ -87,7 +74,6 @@ export function createTelemetryState(initial: TelemetryInitialValues = {}): Tele
 		thinkingLevel: normalizeThinkingLevel(initial.thinkingLevel),
 		modelSupportsReasoning: initial.modelSupportsReasoning ?? false,
 		tools: [],
-		agentRuns: [],
 	};
 }
 
@@ -193,21 +179,6 @@ function finishTool(
 	return { ...state, tools };
 }
 
-function finishLatestAgentRun(state: TelemetryState, at: number): TelemetryState {
-	let matchIndex = -1;
-	for (let index = state.agentRuns.length - 1; index >= 0; index -= 1) {
-		if (state.agentRuns[index]?.status === "running") {
-			matchIndex = index;
-			break;
-		}
-	}
-	if (matchIndex < 0) return state;
-
-	const agentRuns = [...state.agentRuns];
-	agentRuns[matchIndex] = { ...agentRuns[matchIndex]!, status: "completed", endTime: at };
-	return { ...state, agentRuns };
-}
-
 export function updateTelemetryState(
 	state: TelemetryState,
 	update: TelemetryUpdate,
@@ -221,15 +192,6 @@ export function updateTelemetryState(
 			return addTool(state, update);
 		case "tool-result":
 			return finishTool(state, update);
-		case "agent-start": {
-			let agentRuns = [...state.agentRuns, { status: "running" as const, startTime: update.at }];
-			if (agentRuns.length > AGENT_HISTORY_LIMIT) {
-				agentRuns = agentRuns.slice(-AGENT_HISTORY_RETAINED);
-			}
-			return { ...state, agentRuns };
-		}
-		case "agent-end":
-			return finishLatestAgentRun(state, update.at);
 	}
 }
 
@@ -254,12 +216,8 @@ export function getTelemetryStats(state: TelemetryState): TelemetryStats {
 		.filter((tool) => tool.status === "running")
 		.slice(-2)
 		.map((tool) => ({ ...tool }));
-	const activeAgentRuns = state.agentRuns.reduce(
-		(count, run) => count + (run.status === "running" ? 1 : 0),
-		0,
-	);
 
-	return { completedToolCounts, recentRunningTools, activeAgentRuns };
+	return { completedToolCounts, recentRunningTools };
 }
 
 export const createTelemetry = createTelemetryState;

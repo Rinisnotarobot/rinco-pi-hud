@@ -66,10 +66,10 @@ pi install "$PWD"
 | --- | --- |
 | **Project** | 目录、Git 分支、Commit 与 Tag、工作区状态、Git 操作状态（`MERGING`、`REBASING` 等）、差异指标、运行时、包版本、OS、用户 |
 | **Session** | 会话名称、Provider 与模型、Thinking 等级、轮次、会话时长 |
-| **Activity** | 正在运行的 Tool、已完成 Tool 计数、活跃 Agent、`Agent idle`、Skill、MCP Server |
+| **Activity** | 正在运行的 Tool、已完成 Tool 计数、Skill、MCP Server |
 | **Usage** | Context 窗口与进度条、输入/输出 Token、缓存读写量与命中率、费用、模型限额、时间 |
 
-行用 `/hud row usage disable` 开关；行内每个状态段在同一界面里各有开关。使用旧版聚合开关 `tokens`、`toolActivity`、`agentActivity` 的配置会自动迁移。
+行用 `/hud row usage disable` 开关；行内每个状态段在同一界面里各有开关。使用旧版聚合开关 `tokens`、`toolActivity` 的配置会自动迁移。
 
 ### 模型限额
 
@@ -122,7 +122,7 @@ Usage 行跟随当前模型的 Provider：
 | [`extensions/hud/ui/`](../extensions/hud/ui/) | 图标与终端样式工具 |
 | [`docs/footer.md`](footer.md) | 完整脚注配置参考 |
 | [`docs/CONTRIBUTING.md`](CONTRIBUTING.md) | 本地开发、测试规范和 PR 检查清单 |
-| [`tests/`](../tests/) | Vitest 测试套件：脚注布局、遥测、各家余额与 MCP 配置计数 |
+| [`tests/`](../tests/) | Vitest 测试套件：脚注布局、遥测、各家余额与 MCP 运行时工具计数 |
 
 ## 开发
 
