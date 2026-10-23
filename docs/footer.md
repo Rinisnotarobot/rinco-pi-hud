@@ -18,22 +18,38 @@ The category column is sized from visible text so every separator aligns. When a
 Control each default-layout row independently:
 
 ```text
-/zentui row project enable
-/zentui row session disable
-/zentui row activity toggle
-/zentui row usage toggle
+/hud row project enable
+/hud row session disable
+/hud row activity toggle
+/hud row usage toggle
 ```
 
-The command shape is `/zentui row <project|session|activity|usage> <enable|disable|toggle>`. Values persist under `footerRows`; all four default to `true`. Row switches apply only to the default layout and do not alter a custom single-line `footerFormat`.
+The command shape is `/hud row <project|session|activity|usage> <enable|disable|toggle>`. Values persist under `footerRows`; all four default to `true`. Row switches apply only to the default layout and do not alter a custom single-line `footerFormat`.
+
+## Using with the original Zentui
+
+This package registers `/hud`, not `/zentui`. The original Zentui keeps `/zentui`;
+the HUD has no legacy alias and still uses `rinco-pi-hud.json`.
+
+To use Zentui's User messages, Working line, or Tool display alongside the HUD,
+set Zentui's `components.footer.style` to `"native"` in
+`~/.pi/agent/zentui.json`. Native releases Zentui's Footer ownership without
+removing another extension's footer. Keep this package's status line enabled.
+Do not select Zentui Starship or Hidden while expecting the HUD to remain in control.
+
+Zentui components are independent. Disable its Editor, Thinking and selector borders
+unless wanted. With its Editor disabled, use Working line placement `"above"` rather
+than the editor-border placement. Tool display custom/MCP overrides and replacement
+of Bash renderers require separate consent; installing the package does not authorize them.
 
 ## Footer modes
 
-- `/zentui footer hud`: enable the normal four groups or configured templates.
-- `/zentui footer hidden`: show only allowed third-party statuses, no row when none exist.
-- `/zentui footer native`: release ownership to Pi; saved HUD choices remain unchanged.
+- `/hud footer hud`: enable the normal four groups or configured templates.
+- `/hud footer hidden`: show only allowed third-party statuses, no row when none exist.
+- `/hud footer native`: release ownership to Pi; saved HUD choices remain unchanged.
 
 Hidden and HUD share the existing per-key `extensionStatuses` placement/color policy.
-Native is Pi-owned and does not apply this policy. `/zentui layout`, `segments`, and
+Native is Pi-owned and does not apply this policy. `/hud layout`, `segments`, and
 `extensions` open the corresponding settings tabs directly.
 
 ## Repository paths
@@ -54,7 +70,7 @@ abbreviation; a stale root is never used to produce a relative path.
 
 By default, `colorSources.starship` is `"theme"`. Built-in footer colors use semantic Pi theme tokens such as `accent`, `muted`, `success`, `warning`, and `error`; runtime labels also use the active theme. Switching themes, including automatic light/dark switching, recolors the footer without reloading the extension. This applies to both the default rows and custom templates.
 
-To enable theme colors in an existing configuration, use **Footer colors → theme** in `/zentui`, or set:
+To enable theme colors in an existing configuration, use **Footer colors → theme** in `/hud`, or set:
 
 ```json
 {
@@ -108,13 +124,13 @@ Entries you explicitly set under `colors` override the selected defaults. Semant
 Set a custom template:
 
 ```text
-/zentui format "$os  $cwd(  $git_branch)$fill($context)(  $tokens)(  $cost)"
+/hud format "$os  $cwd(  $git_branch)$fill($context)(  $tokens)(  $cost)"
 ```
 
 Clear it:
 
 ```text
-/zentui format clear
+/hud format clear
 ```
 
 ### Variables
@@ -208,7 +224,7 @@ $separator → $sep
 Set a separate narrow layout (used below 80 terminal columns):
 
 ```text
-/zentui compact-format "$cwd$wrap(on $git_branch)$fill$context$wrap_sep$tokens$wrap_sep$extension_statuses"
+/hud compact-format "$cwd$wrap(on $git_branch)$fill$context$wrap_sep$tokens$wrap_sep$extension_statuses"
 ```
 
 `$wrap` starts an independently packable chunk with a space boundary.
@@ -220,7 +236,7 @@ template order and are right-aligned. Nested/additional fills do not create extr
 
 `compactFooterMaxLines` defaults to 2 (range 1–8), and omitted/truncated chunks use `…`.
 Layout → Responsive compact controls `responsiveFooter`; an empty compact format is inert.
-Use `/zentui compact-format clear` to return to the existing layout at every width.
+Use `/hud compact-format clear` to return to the existing layout at every width.
 Custom templates and wide templates are otherwise unchanged; arbitrary narrow layouts cannot keep every field.
 
 ## Custom extension values
@@ -279,7 +295,7 @@ Unsafe protocols, title, clipboard, cursor controls and embedded line breaks are
 links and styles are closed before adjacent content. Zentui mode strips publisher styling/links.
 
 ```text
-/zentui format "$cwd( · PR #$pr_number)( · $ci)$fill($token_rate)"
+/hud format "$cwd( · PR #$pr_number)( · $ci)$fill($token_rate)"
 ```
 
 PR/CI collection is opt-in through template references and requires installed/authenticated

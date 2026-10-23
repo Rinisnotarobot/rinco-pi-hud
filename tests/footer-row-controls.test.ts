@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "vitest";
-import { registerZentuiSettingsCommand } from "../extensions/hud/commands/settings.ts";
+import { registerHudSettingsCommand } from "../extensions/hud/commands/settings.ts";
 import { mergeConfig } from "../extensions/hud/config/normalize.ts";
 import { saveFooterRowsPatch } from "../extensions/hud/config/persist.ts";
 import { defaultConfig, type FooterRowsConfig } from "../extensions/hud/config/schema.ts";
@@ -55,12 +55,13 @@ function createCommandHarness(footerRows: FooterRowsConfig = defaultConfig.foote
 	const notifications: Array<{ message: string; level: string }> = [];
 	let renderRequests = 0;
 
-	registerZentuiSettingsCommand(
+	registerHudSettingsCommand(
 		{
 			registerCommand(
-				_name: string,
+				name: string,
 				options: { handler: CommandHandler; getArgumentCompletions: typeof completions },
 			) {
+				assert.equal(name, "hud");
 				handler = options.handler;
 				completions = options.getArgumentCompletions;
 			},
@@ -106,7 +107,7 @@ function createCommandHarness(footerRows: FooterRowsConfig = defaultConfig.foote
 }
 
 for (const row of ["project", "session", "activity", "usage"] as const) {
-	test(`/zentui row ${row} toggle flips and renders that row`, async () => {
+	test(`/hud row ${row} toggle flips and renders that row`, async () => {
 		const harness = createCommandHarness();
 
 		await harness.invoke(`row ${row} toggle`);

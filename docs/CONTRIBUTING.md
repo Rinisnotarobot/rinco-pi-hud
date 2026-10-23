@@ -103,7 +103,7 @@ Follow the configured conventions:
 The HUD extension is organized into functional modules under `extensions/hud/`:
 
 - **`index.ts`** — Composition root for controllers, shared state, and UI installation.
-- **`commands/`** — `/zentui` presentation and its configuration-persistence controller.
+- **`commands/`** — `/hud` presentation and its configuration-persistence controller.
 - **`config/`** — Configuration model, normalization, and persistence.
 - **`footer/`** — Footer rendering, semantic group construction, responsive layout, and templates.
 - **`segments/`** — State collectors: Git, runtime, MCP, skills, projects, etc.

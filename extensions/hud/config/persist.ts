@@ -2,7 +2,7 @@
  * `save*Patch` functions: validate a partial settings patch, merge it into
  * the on-disk config record via `mutateConfig`, and return the freshly
  * merged `PolishedTuiConfig`. Each function only accepts fields/values that
- * pass the corresponding type guard, so callers (e.g. the `/zentui` settings
+ * pass the corresponding type guard, so callers (e.g. the `/hud` settings
  * UI) cannot write malformed values into the config file.
  */
 import { normalizeIconMode } from "../ui/icons.js";

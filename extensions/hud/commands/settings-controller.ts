@@ -15,7 +15,7 @@ import {
 	saveSeparatorPatch,
 	saveUiFeaturesPatch,
 } from "../config/config.js";
-import { registerZentuiSettingsCommand } from "./settings.js";
+import { registerHudSettingsCommand } from "./settings.js";
 
 interface SettingsControllerDeps {
 	getConfig: () => PolishedTuiConfig;
@@ -32,7 +32,7 @@ export function registerSettingsController(pi: ExtensionAPI, deps: SettingsContr
 		deps.setConfig(config);
 	};
 
-	registerZentuiSettingsCommand(pi, {
+	registerHudSettingsCommand(pi, {
 		getConfig: deps.getConfig,
 		setColorSources(patch) {
 			updateConfig(saveColorSourcesPatch(patch));

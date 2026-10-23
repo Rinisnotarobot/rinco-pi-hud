@@ -25,8 +25,8 @@ No extra runtime dependency is installed. Pi 1.3–1.x remains supported.
 | Passive live metadata | Template-opt-in `$pr_number`, `$pr_url`, `$ci`, `$token_rate` |
 | Atomic telemetry | `$cache_read` and `$cache_write` already existed; add optional `$subscription` / `$auto_compaction` |
 | Thinking variable | `$thinkingLevel` aliases the existing `$thinking` |
-| Status-only / native mode | `/zentui footer hidden` keeps permitted statuses; `native` releases Footer ownership |
-| Direct settings access | `/zentui layout`, `segments`, `extensions` |
+| Status-only / native mode | `/hud footer hidden` keeps permitted statuses; `native` releases Footer ownership |
+| Direct settings access | `/hud layout`, `segments`, `extensions` |
 
 ## Deliberate differences
 

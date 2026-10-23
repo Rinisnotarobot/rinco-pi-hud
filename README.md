@@ -26,7 +26,7 @@ Requires Pi **1.3.0 or newer within the 1.x release line**. Development and CI d
 pi install npm:rinco-pi-hud
 ```
 
-Restart Pi afterwards, or run `/reload`. The footer is enabled by default and `/zentui` opens the settings UI.
+Restart Pi afterwards, or run `/reload`. The footer is enabled by default and `/hud` opens the settings UI.
 
 From GitHub, or from a local checkout:
 
@@ -44,32 +44,32 @@ pi install "$PWD"
 > Pi extensions run with your user permissions. Review the source before installing any third-party extension.
 
 > [!NOTE]
-> Truecolor and 256-color terminals are supported; explicit RGB colors use Pi's terminal-capability-aware encoder. The screenshot above renders with ASCII icon mode; `/zentui` switches between the `auto`, `nerd`, and `ascii` glyph sets.
+> Truecolor and 256-color terminals are supported; explicit RGB colors use Pi's terminal-capability-aware encoder. The screenshot above renders with ASCII icon mode; `/hud` switches between the `auto`, `nerd`, and `ascii` glyph sets.
 
 ## Commands
 
 | Command | Effect |
 | --- | --- |
-| `/zentui` | Settings UI: rows, segments, separator, icons, colors, templates |
-| `/zentui statusline enable\|disable\|toggle` | Show or hide the whole footer |
-| `/zentui row project\|session\|activity\|usage <enable\|disable\|toggle>` | Turn one row on or off |
-| `/zentui format "<template>"` | Replace the four rows with a single-line template |
-| `/zentui compact-format "<template>"` | Opt into a wrapped template below 80 columns; `clear` removes it |
-| `/zentui footer hud\|hidden\|native` | Four-group/template HUD, statuses only, or Pi’s native footer |
-| `/zentui layout\|segments\|extensions` | Open a settings section directly |
+| `/hud` | Settings UI: rows, segments, separator, icons, colors, templates |
+| `/hud statusline enable\|disable\|toggle` | Show or hide the whole footer |
+| `/hud row project\|session\|activity\|usage <enable\|disable\|toggle>` | Turn one row on or off |
+| `/hud format "<template>"` | Replace the four rows with a single-line template |
+| `/hud compact-format "<template>"` | Opt into a wrapped template below 80 columns; `clear` removes it |
+| `/hud footer hud\|hidden\|native` | Four-group/template HUD, statuses only, or Pi’s native footer |
+| `/hud layout\|segments\|extensions` | Open a settings section directly |
 | `/codex-status` | Print Codex subscription usage and rate-limit windows |
 | `/usage-refresh` | Refresh the model usage or balance shown in the footer |
 
 ## What it shows
 
-| Row | Segments, each with its own switch under **Built-in segments** in `/zentui` |
+| Row | Segments, each with its own switch under **Built-in segments** in `/hud` |
 | --- | --- |
 | **Project** | directory, git branch, commit and tag, working-tree status, operation state (`MERGING`, `REBASING`, …), diff metrics, runtime, package version, OS, user |
 | **Session** | session name, provider and model, thinking level, turn count, duration |
 | **Activity** | running tools, completed tool counts, active agents, `Agent idle`, skills, MCP servers |
 | **Usage** | context window with a gauge, input and output tokens, cache read/write volume and hit rate, cost, model quota, clock |
 
-Rows are toggled with `/zentui row usage disable`; the segments inside them have individual switches in the same UI. Existing configs that used the former aggregate `tokens`, `toolActivity`, or `agentActivity` switches are migrated automatically.
+Rows are toggled with `/hud row usage disable`; the segments inside them have individual switches in the same UI. Existing configs that used the former aggregate `tokens`, `toolActivity`, or `agentActivity` switches are migrated automatically.
 
 ### Model quota
 
@@ -92,16 +92,18 @@ Groups wrap only at segment boundaries. A continuation line realigns under the s
 Set a template for a single-line footer instead of the four groups:
 
 ```text
-/zentui format "$cwd( $git_branch)$fill($context)( $tokens)( $cost)"
+/hud format "$cwd( $git_branch)$fill($context)( $tokens)( $cost)"
 ```
 
-Variables accept `$name` or `${name}`. The [footer reference](docs/footer.md) lists all of them, along with the aliases (`$directory`, `$status`, `$codex`, …). Run `/zentui format` with no argument, or `/zentui format clear`, to go back to the four groups.
+Variables accept `$name` or `${name}`. The [footer reference](docs/footer.md) lists all of them, along with the aliases (`$directory`, `$status`, `$codex`, …). Run `/hud format` with no argument, or `/hud format clear`, to go back to the four groups.
 
 ## Configuration
 
-`/zentui` writes to `~/.pi/agent/rinco-pi-hud.json` and applies changes immediately. It covers the separator style, icon mode (`nerd`, `ascii`, or `auto`), footer colors (Pi theme tokens or terminal palette styles), context rendering (text, gauge, or both), the project refresh interval, and third-party extension statuses with their own placement and color mode.
+The HUD uses `/hud`; `/zentui` is reserved for the original Zentui package. There is no legacy command alias. See [Using with Zentui](docs/footer.md#using-with-the-original-zentui) for component separation.
 
-Footer colors follow the active Pi theme by default, including theme switches and automatic light/dark changes. In `/zentui`, **Footer colors → theme** enables this behavior; **terminal** keeps the original Sakura RGB palette. Explicit custom colors (hex, indexed, or `fg:`/`bg:` styles) remain fixed in either mode. Remove those entries from `colors` to restore automatic theme colors.
+`/hud` writes to `~/.pi/agent/rinco-pi-hud.json` and applies changes immediately. It covers the separator style, icon mode (`nerd`, `ascii`, or `auto`), footer colors (Pi theme tokens or terminal palette styles), context rendering (text, gauge, or both), the project refresh interval, and third-party extension statuses with their own placement and color mode.
+
+Footer colors follow the active Pi theme by default, including theme switches and automatic light/dark changes. In `/hud`, **Footer colors → theme** enables this behavior; **terminal** keeps the original Sakura RGB palette. Explicit custom colors (hex, indexed, or `fg:`/`bg:` styles) remain fixed in either mode. Remove those entries from `colors` to restore automatic theme colors.
 
 Footer features are adapted from Zentui **0.32.0**, without installing its editor, messages, working line, tool display, or OMP adapter. New opt-in features include repository-relative paths, `$join_sep`, compact templates, extension-published values, safe status hyperlinks, PR/CI metadata, and average token rate. Defaults and existing configurations remain unchanged. See [docs/upstream-zentui.md](docs/upstream-zentui.md) for the exact snapshot and integration boundaries, and [docs/footer.md](docs/footer.md) for configuration and examples.
 
@@ -116,7 +118,7 @@ Footer features are adapted from Zentui **0.32.0**, without installing its edito
 | [`extensions/hud/telemetry/`](extensions/hud/telemetry/format.ts) | Usage formatting, provider balance probes, and the Codex subscription client |
 | [`extensions/hud/session/`](extensions/hud/session/) | Pi event registration, session lifecycle, and live context overlay |
 | [`extensions/hud/state/`](extensions/hud/state/) | Aggregated state, telemetry reducer, and project refresh controller |
-| [`extensions/hud/commands/`](extensions/hud/commands/settings.ts) | `/zentui` settings UI and configuration controller |
+| [`extensions/hud/commands/`](extensions/hud/commands/settings.ts) | `/hud` settings UI and configuration controller |
 | [`extensions/hud/ui/`](extensions/hud/ui/) | Icons and terminal style utilities |
 | [`docs/footer.md`](docs/footer.md) | Complete footer configuration reference |
 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Local development, testing guidance, and pull request checklist |
@@ -155,19 +157,19 @@ Confirm Pi is running in TUI mode rather than headless, JSON, or print mode. The
 <details>
 <summary>The layout looks wrong in a narrow terminal</summary>
 
-The footer measures the terminal and wraps at segment boundaries, so narrow windows show fewer segments per line. Set a `footerFormat` template, or disable low-priority segments in `/zentui`.
+The footer measures the terminal and wraps at segment boundaries, so narrow windows show fewer segments per line. Set a `footerFormat` template, or disable low-priority segments in `/hud`.
 </details>
 
 <details>
 <summary>Colors look incorrect</summary>
 
-The default palette follows the active Pi theme. If the footer still uses fixed colors, select **Footer colors → theme** in `/zentui` and remove explicit color overrides from `~/.pi/agent/rinco-pi-hud.json`. Third-party statuses set to `original` retain their own colors. Truecolor and 256-color output follow Pi's detected terminal capabilities.
+The default palette follows the active Pi theme. If the footer still uses fixed colors, select **Footer colors → theme** in `/hud` and remove explicit color overrides from `~/.pi/agent/rinco-pi-hud.json`. Third-party statuses set to `original` retain their own colors. Truecolor and 256-color output follow Pi's detected terminal capabilities.
 </details>
 
 <details>
 <summary>Icons are missing or misaligned</summary>
 
-Unicode and Nerd Font glyphs vary between terminals and fonts. Install a Nerd Font, or switch to ASCII icons in `/zentui`.
+Unicode and Nerd Font glyphs vary between terminals and fonts. Install a Nerd Font, or switch to ASCII icons in `/hud`.
 </details>
 
 ## License

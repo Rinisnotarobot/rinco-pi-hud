@@ -26,7 +26,7 @@ Rinco Pi HUD 用四组实时状态替换 Pi 的脚注行，不需要的部分都
 pi install npm:rinco-pi-hud
 ```
 
-装完重启 Pi，或执行 `/reload`。脚注默认启用，`/zentui` 打开设置界面。
+装完重启 Pi，或执行 `/reload`。脚注默认启用，`/hud` 打开设置界面。
 
 从 GitHub 或本地目录安装：
 
@@ -44,32 +44,32 @@ pi install "$PWD"
 > Pi 扩展以当前用户权限运行。安装任何第三方扩展前，请先审查其源码。
 
 > [!NOTE]
-> 支持 Truecolor 和 256 色终端；显式 RGB 颜色通过 Pi 的终端能力适配接口输出。上图用的是 ASCII 图标模式，`/zentui` 可以在 `auto`、`nerd`、`ascii` 三套符号之间切换。
+> 支持 Truecolor 和 256 色终端；显式 RGB 颜色通过 Pi 的终端能力适配接口输出。上图用的是 ASCII 图标模式，`/hud` 可以在 `auto`、`nerd`、`ascii` 三套符号之间切换。
 
 ## 命令
 
 | 命令 | 作用 |
 | --- | --- |
-| `/zentui` | 设置界面：行、状态段、分隔符、图标、颜色、模板 |
-| `/zentui statusline enable\|disable\|toggle` | 显示或隐藏整个脚注 |
-| `/zentui row project\|session\|activity\|usage <enable\|disable\|toggle>` | 开关某一行 |
-| `/zentui format "<template>"` | 用单行模板替换四行布局 |
-| `/zentui compact-format "<template>"` | 设置低于 80 列时使用的换行模板；`clear` 清除 |
-| `/zentui footer hud\|hidden\|native` | HUD、仅第三方状态、恢复 Pi 原生脚注 |
-| `/zentui layout\|segments\|extensions` | 直接打开对应设置页 |
+| `/hud` | 设置界面：行、状态段、分隔符、图标、颜色、模板 |
+| `/hud statusline enable\|disable\|toggle` | 显示或隐藏整个脚注 |
+| `/hud row project\|session\|activity\|usage <enable\|disable\|toggle>` | 开关某一行 |
+| `/hud format "<template>"` | 用单行模板替换四行布局 |
+| `/hud compact-format "<template>"` | 设置低于 80 列时使用的换行模板；`clear` 清除 |
+| `/hud footer hud\|hidden\|native` | HUD、仅第三方状态、恢复 Pi 原生脚注 |
+| `/hud layout\|segments\|extensions` | 直接打开对应设置页 |
 | `/codex-status` | 打印 Codex 订阅用量与限额窗口 |
 | `/usage-refresh` | 立即刷新脚注上的模型用量或余额 |
 
 ## 显示什么
 
-| 行 | 状态段。每段在 `/zentui` 的 **Built-in segments** 里都有独立开关 |
+| 行 | 状态段。每段在 `/hud` 的 **Built-in segments** 里都有独立开关 |
 | --- | --- |
 | **Project** | 目录、Git 分支、Commit 与 Tag、工作区状态、Git 操作状态（`MERGING`、`REBASING` 等）、差异指标、运行时、包版本、OS、用户 |
 | **Session** | 会话名称、Provider 与模型、Thinking 等级、轮次、会话时长 |
 | **Activity** | 正在运行的 Tool、已完成 Tool 计数、活跃 Agent、`Agent idle`、Skill、MCP Server |
 | **Usage** | Context 窗口与进度条、输入/输出 Token、缓存读写量与命中率、费用、模型限额、时间 |
 
-行用 `/zentui row usage disable` 开关；行内每个状态段在同一界面里各有开关。使用旧版聚合开关 `tokens`、`toolActivity`、`agentActivity` 的配置会自动迁移。
+行用 `/hud row usage disable` 开关；行内每个状态段在同一界面里各有开关。使用旧版聚合开关 `tokens`、`toolActivity`、`agentActivity` 的配置会自动迁移。
 
 ### 模型限额
 
@@ -92,16 +92,18 @@ Usage 行跟随当前模型的 Provider：
 想换成单行脚注，设置模板即可：
 
 ```text
-/zentui format "$cwd( $git_branch)$fill($context)( $tokens)( $cost)"
+/hud format "$cwd( $git_branch)$fill($context)( $tokens)( $cost)"
 ```
 
-变量可以写成 `$name` 或 `${name}`。[脚注参考](footer.md)列出了全部变量和别名（`$directory`、`$status`、`$codex` 等）。不带参数的 `/zentui format`（或 `/zentui format clear`）恢复四行分组布局。
+变量可以写成 `$name` 或 `${name}`。[脚注参考](footer.md)列出了全部变量和别名（`$directory`、`$status`、`$codex` 等）。不带参数的 `/hud format`（或 `/hud format clear`）恢复四行分组布局。
 
 ## 配置
 
-`/zentui` 把配置写入 `~/.pi/agent/rinco-pi-hud.json`，改动立即生效。可配置分隔符样式、图标模式（`nerd`、`ascii`、`auto`）、脚注配色（Pi 主题色或终端调色板样式）、Context 渲染方式（文本、进度条或两者）、项目刷新间隔，以及第三方扩展状态的位置与颜色模式。
+本项目使用 `/hud`，把 `/zentui` 留给原版 Zentui，不保留旧命令别名。配置文件和现有设置不变。与原版搭配时，请将 Zentui 的 Footer 设为 Native，让本项目继续管理 HUD；详见[共存说明](footer.md#using-with-the-original-zentui)。
 
-脚注默认自动跟随当前 Pi 主题，包括手动切换主题和自动明暗切换。在 `/zentui` 中选择 **Footer colors → theme** 启用跟随，选择 **terminal** 则保留原有 Sakura RGB 配色。显式自定义颜色（十六进制、索引色或 `fg:`/`bg:` 样式）在两种模式下都会保留；删除 `colors` 中的相应配置即可恢复自动配色。
+`/hud` 把配置写入 `~/.pi/agent/rinco-pi-hud.json`，改动立即生效。可配置分隔符样式、图标模式（`nerd`、`ascii`、`auto`）、脚注配色（Pi 主题色或终端调色板样式）、Context 渲染方式（文本、进度条或两者）、项目刷新间隔，以及第三方扩展状态的位置与颜色模式。
+
+脚注默认自动跟随当前 Pi 主题，包括手动切换主题和自动明暗切换。在 `/hud` 中选择 **Footer colors → theme** 启用跟随，选择 **terminal** 则保留原有 Sakura RGB 配色。显式自定义颜色（十六进制、索引色或 `fg:`/`bg:` 样式）在两种模式下都会保留；删除 `colors` 中的相应配置即可恢复自动配色。
 
 已适配 Zentui **0.32.0** 的 Footer 新功能：仓库相对路径、`$join_sep` 条件分隔符、窄屏模板、扩展发布的自定义值、安全状态超链接，以及按需启用的 PR/CI 与平均 Token 速率。默认四行 HUD、原有配置及余额查询保持不变；不接管编辑器、消息、工作进度行或工具展示，也不引入 OMP 适配。同步快照和边界见[上游集成记录](upstream-zentui.md)，配置示例和完整变量参考见 [docs/footer.md](footer.md)。
 
@@ -116,7 +118,7 @@ Usage 行跟随当前模型的 Provider：
 | [`extensions/hud/telemetry/`](../extensions/hud/telemetry/format.ts) | 用量格式化、各家余额探测与 Codex 订阅客户端 |
 | [`extensions/hud/session/`](../extensions/hud/session/) | Pi 事件注册、会话生命周期与实时 Context 覆盖 |
 | [`extensions/hud/state/`](../extensions/hud/state/) | 聚合状态、Telemetry Reducer 与项目刷新 Controller |
-| [`extensions/hud/commands/`](../extensions/hud/commands/settings.ts) | `/zentui` 设置界面与配置 Controller |
+| [`extensions/hud/commands/`](../extensions/hud/commands/settings.ts) | `/hud` 设置界面与配置 Controller |
 | [`extensions/hud/ui/`](../extensions/hud/ui/) | 图标与终端样式工具 |
 | [`docs/footer.md`](footer.md) | 完整脚注配置参考 |
 | [`docs/CONTRIBUTING.md`](CONTRIBUTING.md) | 本地开发、测试规范和 PR 检查清单 |
@@ -155,19 +157,19 @@ npx tsx assets/readme/source/build-assets.mts /tmp/footer.json
 <details>
 <summary>窄终端里布局看起来不对</summary>
 
-脚注会测量终端宽度，只在状态段边界换行，所以窗口越窄，每行容纳的状态段越少。可以设置 `footerFormat` 模板，或在 `/zentui` 中关闭低优先级状态段。
+脚注会测量终端宽度，只在状态段边界换行，所以窗口越窄，每行容纳的状态段越少。可以设置 `footerFormat` 模板，或在 `/hud` 中关闭低优先级状态段。
 </details>
 
 <details>
 <summary>颜色显示异常</summary>
 
-默认配色自动跟随当前 Pi 主题。如果脚注仍使用固定颜色，请在 `/zentui` 中选择 **Footer colors → theme**，并删除 `~/.pi/agent/rinco-pi-hud.json` 中的显式颜色覆盖。设为 `original` 的第三方扩展状态会保留自己的颜色。Truecolor 与 256 色输出仍按 Pi 检测到的终端能力选择。
+默认配色自动跟随当前 Pi 主题。如果脚注仍使用固定颜色，请在 `/hud` 中选择 **Footer colors → theme**，并删除 `~/.pi/agent/rinco-pi-hud.json` 中的显式颜色覆盖。设为 `original` 的第三方扩展状态会保留自己的颜色。Truecolor 与 256 色输出仍按 Pi 检测到的终端能力选择。
 </details>
 
 <details>
 <summary>图标缺失或错位</summary>
 
-Unicode 与 Nerd Font 符号的显示效果因终端和字体而异。建议安装 Nerd Font，或在 `/zentui` 中切换到 ASCII 图标。
+Unicode 与 Nerd Font 符号的显示效果因终端和字体而异。建议安装 Nerd Font，或在 `/hud` 中切换到 ASCII 图标。
 </details>
 
 ## 许可证

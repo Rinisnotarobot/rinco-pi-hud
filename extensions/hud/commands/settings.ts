@@ -102,7 +102,7 @@ const featureSettingLabels: Record<FeatureSettingId, string> = {
 };
 
 const featureSettingDescriptions: Record<FeatureSettingId, string> = {
-	statusLine: "Enable or disable Zentui's custom footer/status line.",
+	statusLine: "Enable or disable Rinco HUD's custom footer/status line.",
 };
 
 const footerRowLabels: Record<keyof FooterRowsConfig, string> = {
@@ -333,7 +333,7 @@ function footerSegmentPatch(
 }
 
 function usageText(): string {
-	return 'Usage: /zentui statusline [enable|disable|toggle], /zentui row [project|session|activity|usage] [enable|disable|toggle], or /zentui format "<template>", /zentui compact-format "<template>"|clear, /zentui footer hud|hidden|native, /zentui layout|extensions|segments';
+	return 'Usage: /hud statusline [enable|disable|toggle], /hud row [project|session|activity|usage] [enable|disable|toggle], or /hud format "<template>", /hud compact-format "<template>"|clear, /hud footer hud|hidden|native, /hud layout|extensions|segments';
 }
 
 function isFooterRow(value: string): value is keyof FooterRowsConfig {
@@ -602,9 +602,9 @@ function withSectionFooter(lines: string[], theme: ExtensionContext["ui"]["theme
 	return next;
 }
 
-export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCommandDeps): void {
-	pi.registerCommand("zentui", {
-		description: "Configure Zentui",
+export function registerHudSettingsCommand(pi: ExtensionAPI, deps: SettingsCommandDeps): void {
+	pi.registerCommand("hud", {
+		description: "Configure Rinco HUD",
 		getArgumentCompletions: argumentCompletions,
 		handler: async (_args, ctx) => {
 			const args = typeof _args === "string" ? _args : "";
@@ -673,7 +673,7 @@ export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCo
 					}
 				} catch (error) {
 					const message = error instanceof Error ? error.message : String(error);
-					if (ctx.hasUI) ctx.ui.notify(`Could not update Zentui settings: ${message}`, "error");
+					if (ctx.hasUI) ctx.ui.notify(`Could not update HUD settings: ${message}`, "error");
 				}
 				return;
 			}
@@ -691,7 +691,7 @@ export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCo
 					}
 				} catch (error) {
 					const message = error instanceof Error ? error.message : String(error);
-					if (ctx.hasUI) ctx.ui.notify(`Could not update Zentui settings: ${message}`, "error");
+					if (ctx.hasUI) ctx.ui.notify(`Could not update HUD settings: ${message}`, "error");
 				}
 				return;
 			}
@@ -859,7 +859,7 @@ export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCo
 								settingsList = makeSettingsList();
 								tui.requestRender();
 								const message = error instanceof Error ? error.message : String(error);
-								ctx.ui.notify(`Could not update Zentui settings: ${message}`, "error");
+								ctx.ui.notify(`Could not update HUD settings: ${message}`, "error");
 							}
 						},
 						() => done(undefined),

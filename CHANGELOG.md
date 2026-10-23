@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Rename the HUD settings command from `/zentui` to `/hud`, without a legacy alias, so the original Zentui can use `/zentui` independently. Existing HUD configuration and publisher protocols are unchanged.
+
 ## [1.6.0] - 2026-10-23
 
 ### Added

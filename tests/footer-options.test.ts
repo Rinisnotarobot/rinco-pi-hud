@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "vitest";
-import { registerZentuiSettingsCommand } from "../extensions/hud/commands/settings.ts";
+import { registerHudSettingsCommand } from "../extensions/hud/commands/settings.ts";
 import {
 	defaultConfig,
 	type FooterOptionsPatch,
@@ -90,16 +90,16 @@ test("footer patches reject malformed values and unrecognized keys", async () =>
 });
 
 function commandHarness() {
-	type Options = Parameters<
-		Parameters<typeof registerZentuiSettingsCommand>[0]["registerCommand"]
-	>[1];
+	type Options = Parameters<Parameters<typeof registerHudSettingsCommand>[0]["registerCommand"]>[1];
 	let command: Options | undefined;
+	const registeredCommands: string[] = [];
 	const calls: unknown[] = [];
 	const notices: string[] = [];
 	const pages: string[][] = [];
-	registerZentuiSettingsCommand(
+	registerHudSettingsCommand(
 		{
-			registerCommand(_name: string, options: Options) {
+			registerCommand(name: string, options: Options) {
+				registeredCommands.push(name);
 				command = options;
 			},
 		} as never,
@@ -140,6 +140,7 @@ function commandHarness() {
 		},
 	);
 	return {
+		registeredCommands,
 		calls,
 		notices,
 		pages,
@@ -167,6 +168,10 @@ function commandHarness() {
 		},
 	};
 }
+
+test("HUD registers only /hud, leaving /zentui to the upstream extension", () => {
+	assert.deepEqual(commandHarness().registeredCommands, ["hud"]);
+});
 
 test("footer direct commands preserve ordering and clear compact templates", async () => {
 	const harness = commandHarness();
