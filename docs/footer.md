@@ -115,7 +115,7 @@ Entries you explicitly set under `colors` override the selected defaults. Semant
 | `cacheDetails` | on | Usage | Cache read/write tokens and latest hit rate |
 | `cost` | on | Usage | Cumulative session cost |
 | `codexUsage` | on | Usage | Codex weekly quota remaining |
-| `time` | off | Usage | Current time `HH:MM` |
+| `time` | off | Session | Current time `HH:MM`, after session duration |
 
 ## Template syntax
 

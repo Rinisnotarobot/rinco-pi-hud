@@ -160,6 +160,20 @@ describe("Pi 1.3 compatibility", () => {
 		expect(activateFromPrompt).toHaveBeenCalledWith("hello", "/tmp");
 		expect(updateSkillCounts).toHaveBeenCalledTimes(2);
 	});
+	it("the wall clock follows Session visibility independently of Usage and duration", () => {
+		const config = structuredClone(defaultConfig);
+		config.footerSegments.time = true;
+		config.footerSegments.sessionDuration = false;
+		config.footerRows.session = true;
+		config.footerRows.usage = false;
+		expect(footerClockNeeds(config, false).wallClock).toBe(true);
+		expect(footerClockNeeds(config, false).duration).toBe(false);
+		config.footerRows.session = false;
+		config.footerRows.usage = true;
+		expect(footerClockNeeds(config, false).wallClock).toBe(false);
+		config.footerFormat = "$time";
+		expect(footerClockNeeds(config, false).wallClock).toBe(true);
+	});
 	it("only refreshes clocks used by visible rows or the custom format", () => {
 		const config = structuredClone(defaultConfig);
 		config.footerRows = { project: false, session: false, activity: false, usage: false };

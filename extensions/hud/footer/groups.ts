@@ -20,6 +20,7 @@ export interface SessionFooterSegments {
 	thinking: string;
 	turn: string;
 	duration: string;
+	time: string;
 }
 
 export interface ActivityFooterSegments {
@@ -39,7 +40,6 @@ export interface UsageFooterSegments {
 	cache: string;
 	cost: string;
 	quota: string;
-	time: string;
 }
 
 export interface CategorizedFooterGroupInput {
@@ -77,6 +77,7 @@ export function buildCategorizedFooterGroups(
 			input.session.thinking,
 			input.session.turn,
 			input.session.duration,
+			input.session.time,
 		]),
 		activity: compact([
 			input.activity.category,
@@ -94,7 +95,6 @@ export function buildCategorizedFooterGroups(
 			input.usage.cache,
 			input.usage.cost,
 			input.usage.quota,
-			input.usage.time,
 		]),
 	};
 }

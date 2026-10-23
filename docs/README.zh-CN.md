@@ -65,9 +65,9 @@ pi install "$PWD"
 | 行 | 状态段。每段在 `/hud` 的 **Built-in segments** 里都有独立开关 |
 | --- | --- |
 | **Project** | 目录、Git 分支、Commit 与 Tag、工作区状态、Git 操作状态（`MERGING`、`REBASING` 等）、差异指标、运行时、包版本、OS、用户 |
-| **Session** | 会话名称、Provider 与模型、Thinking 等级、轮次、会话时长 |
+| **Session** | 会话名称、Provider 与模型、Thinking 等级、轮次、会话时长、时间 |
 | **Activity** | 正在运行的 Tool、已完成 Tool 计数、Skill、MCP Server |
-| **Usage** | Context 窗口与进度条、输入/输出 Token、缓存读写量与命中率、费用、模型限额、时间 |
+| **Usage** | Context 窗口与进度条、输入/输出 Token、缓存读写量与命中率、费用、模型限额 |
 
 行用 `/hud row usage disable` 开关；行内每个状态段在同一界面里各有开关。使用旧版聚合开关 `tokens`、`toolActivity` 的配置会自动迁移。
 

@@ -152,7 +152,7 @@ const footerSegmentSettingDescriptions: Record<FooterSegmentSettingId, string> =
 		"Show numeric ahead/behind and stash counts (requires the Git status segment to be enabled).",
 	sessionDuration: "Show session running time on the session row.",
 	username: "Show user@hostname on the project row.",
-	time: "Show the current time (HH:MM) on the usage row.",
+	time: "Show the current time (HH:MM) after duration on the session row.",
 	os: "Show an operating-system icon on the project row.",
 	runtime: "Show or hide the detected runtime/language on the project row.",
 	context: "Show or hide context usage on the usage row.",

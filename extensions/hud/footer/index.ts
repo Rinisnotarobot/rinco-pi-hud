@@ -593,6 +593,7 @@ export function installFooter(
 						thinking: config.footerSegments.thinking ? thinkingLabel : "",
 						turn: config.footerSegments.turnCount ? turnLabel : "",
 						duration: sessionDurationSegment,
+						time: timeSegment,
 					},
 					activity: {
 						category: activityCategoryLabel,
@@ -614,7 +615,6 @@ export function installFooter(
 							? renderStyleForSource(theme, colorSource, config.colors.cost, state.costLabel)
 							: "",
 						quota: config.footerSegments.codexUsage ? codexUsageLabel : "",
-						time: timeSegment,
 					},
 				});
 				const contents = composeCategorizedFooterRows(

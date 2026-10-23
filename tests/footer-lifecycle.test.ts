@@ -153,6 +153,23 @@ it("never runs GitHub for defaults, hidden/native mode or a publisher-owned ci a
 	await h.emit("session_shutdown");
 });
 
+it("renders current time after Session duration and not in Usage", async () => {
+	vi.setSystemTime(new Date(2026, 9, 23, 20, 5));
+	const h = harness();
+	h.configure({
+		footerSegments: { sessionDuration: true, time: true },
+	});
+	await h.emit("session_start");
+	const rows = h.render().split("\n");
+	const session = rows.find((row) => row.includes("Session"))!;
+	expect(session).toMatch(/Duration 0s.*Time 20:05/);
+	expect(rows.find((row) => row.includes("Usage"))).not.toContain("Time");
+	h.configure({ footerSegments: { sessionDuration: false, time: true } });
+	expect(h.render()).toContain("Time 20:05");
+	expect(h.render()).not.toContain("Duration");
+	await h.emit("session_shutdown");
+});
+
 it("wires MCP rendering to Pi's current tool registry rather than project refresh state", async () => {
 	const h = harness();
 	h.configure({ footerFormat: "$mcp" });

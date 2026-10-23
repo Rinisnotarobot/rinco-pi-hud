@@ -23,6 +23,7 @@ test("footer groups preserve semantic order and discard unavailable segments", (
 			thinking: "Thinking level: medium",
 			turn: "Turn 4",
 			duration: "Duration 2m",
+			time: "Time 20:05",
 		},
 		activity: {
 			category: "Activity",
@@ -40,7 +41,6 @@ test("footer groups preserve semantic order and discard unavailable segments", (
 			cache: "",
 			cost: "$ 0.03",
 			quota: "Codex 76%",
-			time: "Time 20:05",
 		},
 	});
 
@@ -57,7 +57,15 @@ test("footer groups preserve semantic order and discard unavailable segments", (
 			"Linux",
 			"user@host",
 		],
-		session: ["Session", "work", "gpt-5.3", "Thinking level: medium", "Turn 4", "Duration 2m"],
+		session: [
+			"Session",
+			"work",
+			"gpt-5.3",
+			"Thinking level: medium",
+			"Turn 4",
+			"Duration 2m",
+			"Time 20:05",
+		],
 		activity: [
 			"Activity",
 			"Tool bash:test (2s)",
@@ -67,6 +75,6 @@ test("footer groups preserve semantic order and discard unavailable segments", (
 			"Status A",
 			"Status B",
 		],
-		usage: ["Usage", "35%/200k", "↑ 4k", "↓ 1k", "$ 0.03", "Codex 76%", "Time 20:05"],
+		usage: ["Usage", "35%/200k", "↑ 4k", "↓ 1k", "$ 0.03", "Codex 76%"],
 	});
 });

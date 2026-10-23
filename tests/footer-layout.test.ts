@@ -12,9 +12,16 @@ test("default footer composes four aligned semantic groups", () => {
 	const rows = composeCategorizedFooterRows(
 		{
 			project: ["Project", "pi-sakura", "main", "Node 24"],
-			session: ["Session", "gpt-5.3", "Thinking level: medium", "Turn 4", "Duration 2m"],
+			session: [
+				"Session",
+				"gpt-5.3",
+				"Thinking level: medium",
+				"Turn 4",
+				"Duration 2m",
+				"Time 20:05",
+			],
 			activity: ["Activity", "Tool read × 4", "Skill 2/3", "MCP 2/2"],
-			usage: ["Usage", "35%/200k", "↑ 4.2k", "↓ 1.1k", "$ 0.030", "Time 20:05"],
+			usage: ["Usage", "35%/200k", "↑ 4.2k", "↓ 1.1k", "$ 0.030"],
 		},
 		separator,
 		120,
@@ -22,9 +29,9 @@ test("default footer composes four aligned semantic groups", () => {
 
 	assert.deepEqual(rows, [
 		"Project  · pi-sakura · main · Node 24",
-		"Session  · gpt-5.3 · Thinking level: medium · Turn 4 · Duration 2m",
+		"Session  · gpt-5.3 · Thinking level: medium · Turn 4 · Duration 2m · Time 20:05",
 		"Activity · Tool read × 4 · Skill 2/3 · MCP 2/2",
-		"Usage    · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030 · Time 20:05",
+		"Usage    · 35%/200k · ↑ 4.2k · ↓ 1.1k · $ 0.030",
 	]);
 	assert.equal(
 		rows.every((row) => !row.startsWith(" ")),

@@ -65,9 +65,9 @@ pi install "$PWD"
 | Row | Segments, each with its own switch under **Built-in segments** in `/hud` |
 | --- | --- |
 | **Project** | directory, git branch, commit and tag, working-tree status, operation state (`MERGING`, `REBASING`, …), diff metrics, runtime, package version, OS, user |
-| **Session** | session name, provider and model, thinking level, turn count, duration |
+| **Session** | session name, provider and model, thinking level, turn count, duration, clock |
 | **Activity** | running tools, completed tool counts, skills, MCP servers |
-| **Usage** | context window with a gauge, input and output tokens, cache read/write volume and hit rate, cost, model quota, clock |
+| **Usage** | context window with a gauge, input and output tokens, cache read/write volume and hit rate, cost, model quota |
 
 Rows are toggled with `/hud row usage disable`; the segments inside them have individual switches in the same UI. Existing configs that used the former aggregate `tokens` or `toolActivity` switches are migrated automatically.
 

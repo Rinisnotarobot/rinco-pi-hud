@@ -18,7 +18,8 @@ export function footerClockNeeds(
 	const defaultLayout = !config.footerFormat;
 	return {
 		wallClock:
-			names.has("time") || (defaultLayout && config.footerRows.usage && config.footerSegments.time),
+			names.has("time") ||
+			(defaultLayout && config.footerRows.session && config.footerSegments.time),
 		duration:
 			names.has("session_duration") ||
 			(defaultLayout && config.footerRows.session && config.footerSegments.sessionDuration),
