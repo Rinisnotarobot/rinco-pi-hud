@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-23
+
 ### Changed
 
 - Follow the active Pi theme by default, including live and automatic light/dark theme changes.
