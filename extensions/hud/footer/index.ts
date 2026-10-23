@@ -1,13 +1,16 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import type { PolishedTuiConfig, SeparatorStyle } from "../config/config.js";
-import { FOOTER_FORMAT_ALIASES } from "../config/config.js";
+import { FOOTER_FORMAT_ALIASES, FOOTER_FORMAT_VARIABLES } from "../config/config.js";
 import {
 	collectExtensionStatusSegments,
 	type ExtensionStatusSegment,
 } from "../segments/extension-status.js";
 import { composeCategorizedFooterRows, composeFooterContent } from "./layout.js";
 import { parseFooterFormat, renderFormatSplit, stripOrphanSeparators } from "./format.js";
+import { renderCompactFooter } from "./compact.js";
+import { AtomicTemplateValues } from "./custom-values.js";
+import { sanitizeCustomVariableText } from "../segments/custom-variables.js";
 import { buildCategorizedFooterGroups } from "./groups.js";
 import {
 	buildGitStatusLabels,
@@ -50,10 +53,14 @@ export function installFooter(
 		scheduleProjectRefresh: (ctx: ExtensionContext) => void;
 		setExtensionStatusesGetter?: (fn: (() => ReadonlyMap<string, string>) | undefined) => void;
 		getLiveContext?: () => LiveContextOverride | undefined;
+		getCustomValues?: () => ReadonlyMap<string, string>;
+		getTemplateValues?: () => ReadonlyMap<string, string>;
+		setOwnership?: (owned: boolean) => void;
 	},
 ): void {
 	ctx.ui.setFooter((tui, theme, footerData) => {
 		hooks.setRequestRender(() => tui.requestRender());
+		hooks.setOwnership?.(true);
 		hooks.setExtensionStatusesGetter?.(() => footerData.getExtensionStatuses());
 		const unsubscribeBranch = footerData.onBranchChange(() => {
 			hooks.scheduleProjectRefresh(ctx);
@@ -63,6 +70,7 @@ export function installFooter(
 		return {
 			dispose: () => {
 				unsubscribeBranch();
+				hooks.setOwnership?.(false);
 				hooks.setRequestRender(undefined);
 				hooks.setExtensionStatusesGetter?.(undefined);
 			},
@@ -71,6 +79,34 @@ export function installFooter(
 				if (width <= 0) return [""];
 				const config = getConfig();
 				const colorSource = config.colorSources.starship;
+				if (config.footerStyle === "hidden") {
+					const statuses = collectExtensionStatusSegments(
+						footerData.getExtensionStatuses(),
+						config,
+					);
+					const styled = (segments: ExtensionStatusSegment[]) =>
+						segments.map((segment) =>
+							segment.colorMode === "original"
+								? segment.text
+								: renderStyleForSource(
+										theme,
+										colorSource,
+										config.colors.extensionStatus,
+										segment.text,
+									),
+						);
+					if (![...statuses.left, ...statuses.middle, ...statuses.right].length) return [];
+					const content = composeFooterContent(
+						"",
+						"",
+						styled(statuses.left),
+						styled(statuses.middle),
+						styled(statuses.right),
+						" ",
+						Math.max(1, width - 2),
+					);
+					return [truncateToWidth(width > 2 ? ` ${content} ` : content, width, "")];
+				}
 				const iconMode = config.icons.mode;
 				const rawExtensionStatuses = footerData.getExtensionStatuses();
 				const { safeCwd, safeRuntime, safePackageVersion, safeCommit } = sanitizeFooterInputs(
@@ -91,6 +127,7 @@ export function installFooter(
 					formatCwdLabel(safeCwd, config.icons.cwd, {
 						mode: config.pathDisplay.mode,
 						depth: config.pathDisplay.depth,
+						repositoryRoot: state.repositoryCwd === ctx.cwd ? state.repositoryRoot : undefined,
 					}),
 				);
 				const cwdValueLabel = renderStyleForSource(
@@ -100,6 +137,7 @@ export function installFooter(
 					formatCwdLabel(safeCwd, "", {
 						mode: config.pathDisplay.mode,
 						depth: config.pathDisplay.depth,
+						repositoryRoot: state.repositoryCwd === ctx.cwd ? state.repositoryRoot : undefined,
 					}),
 				);
 				const branch = safeStatusText(state.branch, 256) || undefined;
@@ -165,8 +203,37 @@ export function installFooter(
 					activeAgentsLabel,
 					agentIdleLabel,
 				} = buildTelemetryLabels(ctx, state, config, theme, colorSource);
+				const rawCustomValues = hooks.getCustomValues?.() ?? new Map<string, string>();
+				const customValues = new Map<string, string>();
+				for (const [alias, key] of Object.entries(config.footerVariables)) {
+					const raw = rawCustomValues.get(key);
+					if (raw === undefined) continue;
+					const override = Object.hasOwn(config.customValueColors, key)
+						? config.customValueColors[key]
+						: undefined;
+					const mode = override !== undefined ? "zentui" : config.customValueColorMode;
+					const text = sanitizeCustomVariableText(raw, mode);
+					customValues.set(
+						alias,
+						override !== undefined || mode === "zentui"
+							? renderStyleForSource(
+									theme,
+									colorSource,
+									override ?? config.colors.extensionStatus,
+									text,
+								)
+							: text,
+					);
+				}
+				const templateValues = hooks.getTemplateValues?.() ?? new Map<string, string>();
+				let atomic: AtomicTemplateValues | undefined;
 				const renderVariable = (name: string): string => {
-					const canonical = FOOTER_FORMAT_ALIASES[name] ?? name;
+					if (Object.hasOwn(config.footerVariables, name)) {
+						return atomic ? atomic.resolve(name) : (customValues.get(name) ?? "");
+					}
+					const canonical = Object.hasOwn(FOOTER_FORMAT_ALIASES, name)
+						? FOOTER_FORMAT_ALIASES[name]
+						: name;
 					switch (canonical) {
 						case "cwd":
 							return cwdLabel;
@@ -326,6 +393,18 @@ export function installFooter(
 							return runningToolsLabel;
 						case "active_agents":
 							return activeAgentsLabel || agentIdleLabel;
+						case "subscription":
+						case "auto_compaction":
+						case "pr_number":
+						case "pr_url":
+						case "ci":
+						case "token_rate":
+							return renderStyleForSource(
+								theme,
+								colorSource,
+								config.colors.muted,
+								templateValues.get(canonical) ?? "",
+							);
 						default:
 							return "";
 					}
@@ -446,23 +525,48 @@ export function installFooter(
 					return truncateToWidth(framed, width, "");
 				};
 
-				if (config.footerFormat) {
-					const {
-						left: fmtLeft,
-						middle: fmtMiddle,
-						right: fmtRight,
-					} = renderFormatSplit(parseFooterFormat(config.footerFormat), renderVariable);
-					const templateMiddle = stripOrphanSeparators(fmtMiddle);
-					const content = composeFooterContent(
-						stripOrphanSeparators(fmtLeft),
-						stripOrphanSeparators(fmtRight),
-						extensionLeft,
-						templateMiddle ? [templateMiddle, ...extensionMiddle] : extensionMiddle,
-						extensionRight,
-						separator,
-						innerWidth,
-					);
-					return [frame(content)];
+				const useCompact = config.responsiveFooter && config.compactFooterFormat && width < 80;
+				if (config.footerFormat || useCompact) {
+					const format = useCompact ? config.compactFooterFormat : config.footerFormat;
+					const tokens = parseFooterFormat(format);
+					const reserved = [
+						format,
+						...FOOTER_FORMAT_VARIABLES.map(renderVariable),
+						...extensionLeft,
+						...extensionMiddle,
+						...extensionRight,
+					];
+					// Recompose without clipped custom values; never display a partial quota/label.
+					for (let pass = 0; pass <= 16; pass++) {
+						atomic = new AtomicTemplateValues(customValues, reserved);
+						const { left, middle, right } = renderFormatSplit(tokens, renderVariable);
+						const templateMiddle = stripOrphanSeparators(middle);
+						const rows = useCompact
+							? renderCompactFooter(
+									format,
+									renderVariable,
+									[...extensionLeft, ...extensionMiddle, ...extensionRight],
+									separator,
+									innerWidth,
+									config.compactFooterMaxLines,
+								)
+							: [
+									composeFooterContent(
+										stripOrphanSeparators(left),
+										stripOrphanSeparators(right),
+										extensionLeft,
+										templateMiddle ? [templateMiddle, ...extensionMiddle] : extensionMiddle,
+										extensionRight,
+										separator,
+										innerWidth,
+									),
+								];
+						const framed = rows.map(frame);
+						const omitted = atomic.omitted([left, middle, right], framed);
+						if (omitted.length === 0) return atomic.restore(framed);
+						for (const alias of omitted) customValues.delete(alias);
+					}
+					return [""];
 				}
 
 				const groups = buildCategorizedFooterGroups({

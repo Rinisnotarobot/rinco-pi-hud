@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Adapt Footer/HUD features from pi-zentui 0.32.0 (upstream snapshot
+  `9e8e798cfcce26cee9e1def4daf3668616482610`), without taking over other UI components.
+- Repository-relative paths with worktree support and safe full-path fallback.
+- Conditional `$join_sep` joins and opt-in compact templates with wrapping, right alignment,
+  bounded lines, and independently packed `$extension_statuses`.
+- Protocol-v1 `zentui:variable` publications, local template aliases, individual color overrides,
+  whole-value fitting, and session/ownership-scoped demand.
+- Safe HTTP(S) status hyperlinks in original color mode.
+- Demand-driven `$pr_number`, `$pr_url`, `$ci`, completed-call-average `$token_rate`,
+  and optional `$subscription` / `$auto_compaction` markers.
+- Hidden status-only mode, native-footer restoration, compact layout controls, and direct settings routes.
+
+### Compatibility
+
+- Keep four HUD groups as the default, the independent `rinco-pi-hud.json` configuration,
+  Pi 1.3–1.x support, theme following, and existing provider usage/balance clients.
+- Keep `$extensions` as the installed-package count; use `$extension_statuses` for compact statuses.
+- No editor, message, working-line, tool-display, experimental thinking, or OMP integration is installed.
+
 ## [1.5.0] - 2026-10-23
 
 ### Changed

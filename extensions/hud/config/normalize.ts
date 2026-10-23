@@ -6,6 +6,7 @@
  * is length-capped and stripped of control/VT characters before being stored.
  */
 import { stripVTControlCharacters } from "node:util";
+import { normalizeTemplateVariables } from "../footer/custom-values.js";
 import {
 	ICON_GLYPH_KEYS,
 	type IconGlyphs,
@@ -15,6 +16,8 @@ import {
 import { isSupportedColorSpec } from "../ui/style.js";
 import {
 	DEFAULT_EXTENSION_STATUS_COLOR_MODE,
+	FOOTER_FORMAT_VARIABLES,
+	FOOTER_FORMAT_ALIASES,
 	DEFAULT_PROJECT_REFRESH_INTERVAL_MS,
 	MIN_PROJECT_REFRESH_INTERVAL_MS,
 	type ColorSource,
@@ -97,7 +100,10 @@ function parseContextThresholds(value: unknown): ContextThresholds {
 function parsePathDisplay(value: unknown): PathDisplayConfig {
 	const defaults = defaultConfig.pathDisplay;
 	if (!isRecord(value)) return { ...defaults };
-	const mode = value.mode === "full" || value.mode === "basename" ? value.mode : defaults.mode;
+	const mode =
+		value.mode === "full" || value.mode === "basename" || value.mode === "repository"
+			? value.mode
+			: defaults.mode;
 	const rawDepth = value.depth;
 	const depth =
 		typeof rawDepth === "number" && Number.isFinite(rawDepth) && rawDepth >= 0
@@ -368,6 +374,34 @@ export function mergeConfig(parsed: unknown): PolishedTuiConfig {
 	return {
 		projectRefreshIntervalMs: parseProjectRefreshIntervalMs(config.projectRefreshIntervalMs),
 		footerFormat: sanitizeConfigText(stringValue(config, "footerFormat") ?? "", 4096),
+		footerStyle: config.footerStyle === "hidden" ? "hidden" : "hud",
+		compactFooterFormat: sanitizeConfigText(stringValue(config, "compactFooterFormat") ?? "", 4096),
+		responsiveFooter: typeof config.responsiveFooter === "boolean" ? config.responsiveFooter : true,
+		compactFooterMaxLines:
+			typeof config.compactFooterMaxLines === "number" &&
+			Number.isFinite(config.compactFooterMaxLines)
+				? Math.max(1, Math.min(8, Math.floor(config.compactFooterMaxLines)))
+				: defaultConfig.compactFooterMaxLines,
+		footerVariables: normalizeTemplateVariables(config.footerVariables, [
+			...FOOTER_FORMAT_VARIABLES,
+			...Object.keys(FOOTER_FORMAT_ALIASES),
+		]),
+		customValueColorMode: isExtensionStatusColorMode(config.customValueColorMode)
+			? config.customValueColorMode
+			: defaultConfig.customValueColorMode,
+		customValueColors: isRecord(config.customValueColors)
+			? Object.fromEntries(
+					Object.entries(config.customValueColors).filter((entry): entry is [string, string] => {
+						const [key, style] = entry;
+						return (
+							key.length > 0 &&
+							key.length <= 64 &&
+							typeof style === "string" &&
+							isSupportedColorSpec(style)
+						);
+					}),
+				)
+			: {},
 		separator: parseSeparatorStyle(config.separator),
 		contextStyle: parseContextStyle(config.contextStyle),
 		contextThresholds: parseContextThresholds(config.contextThresholds),
@@ -396,12 +430,16 @@ export function getExtensionStatusPlacement(
 	config: PolishedTuiConfig,
 	key: string,
 ): ExtensionStatusPlacement {
-	return config.extensionStatuses.placements[key] ?? config.extensionStatuses.defaultPlacement;
+	return Object.hasOwn(config.extensionStatuses.placements, key)
+		? config.extensionStatuses.placements[key]!
+		: config.extensionStatuses.defaultPlacement;
 }
 
 export function getExtensionStatusColorMode(
 	config: PolishedTuiConfig,
 	key: string,
 ): ExtensionStatusColorMode {
-	return config.extensionStatuses.colorModes[key] ?? DEFAULT_EXTENSION_STATUS_COLOR_MODE;
+	return Object.hasOwn(config.extensionStatuses.colorModes, key)
+		? config.extensionStatuses.colorModes[key]!
+		: DEFAULT_EXTENSION_STATUS_COLOR_MODE;
 }

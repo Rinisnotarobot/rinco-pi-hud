@@ -54,6 +54,9 @@ pi install "$PWD"
 | `/zentui statusline enable\|disable\|toggle` | 显示或隐藏整个脚注 |
 | `/zentui row project\|session\|activity\|usage <enable\|disable\|toggle>` | 开关某一行 |
 | `/zentui format "<template>"` | 用单行模板替换四行布局 |
+| `/zentui compact-format "<template>"` | 设置低于 80 列时使用的换行模板；`clear` 清除 |
+| `/zentui footer hud\|hidden\|native` | HUD、仅第三方状态、恢复 Pi 原生脚注 |
+| `/zentui layout\|segments\|extensions` | 直接打开对应设置页 |
 | `/codex-status` | 打印 Codex 订阅用量与限额窗口 |
 | `/usage-refresh` | 立即刷新脚注上的模型用量或余额 |
 
@@ -100,7 +103,7 @@ Usage 行跟随当前模型的 Provider：
 
 脚注默认自动跟随当前 Pi 主题，包括手动切换主题和自动明暗切换。在 `/zentui` 中选择 **Footer colors → theme** 启用跟随，选择 **terminal** 则保留原有 Sakura RGB 配色。显式自定义颜色（十六进制、索引色或 `fg:`/`bg:` 样式）在两种模式下都会保留；删除 `colors` 中的相应配置即可恢复自动配色。
 
-完整的变量与状态段参考见 [docs/footer.md](footer.md)。
+已适配 Zentui **0.32.0** 的 Footer 新功能：仓库相对路径、`$join_sep` 条件分隔符、窄屏模板、扩展发布的自定义值、安全状态超链接，以及按需启用的 PR/CI 与平均 Token 速率。默认四行 HUD、原有配置及余额查询保持不变；不接管编辑器、消息、工作进度行或工具展示，也不引入 OMP 适配。同步快照和边界见[上游集成记录](upstream-zentui.md)，配置示例和完整变量参考见 [docs/footer.md](footer.md)。
 
 ## 仓库结构
 

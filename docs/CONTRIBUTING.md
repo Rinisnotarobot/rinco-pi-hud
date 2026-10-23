@@ -61,6 +61,14 @@ Tests live in `tests/`:
 - `model-usage-refresh.test.ts` — Model usage refresh integration.
 - `token-switch-usage.test.ts` — Token Switch balance formatting.
 - `deepseek-balance.test.ts` — DeepSeek balance parsing, formatting, and query safety.
+- `footer-template-enhancements.test.ts` — Conditional joining, compact packing and alignment.
+- `footer-options.test.ts` — New layout persistence, direct commands and settings routes.
+- `footer-lifecycle.test.ts` — Root wiring, ownership/demand cleanup, clock teardown and inactive network gating.
+- `repository-path.test.ts` — Repository paths, worktrees, safe fallback and stale roots.
+- `live-metadata.test.ts` — Demand gating, GitHub identity/TTL and completed-call token rate.
+- `zentui-footer-integration.test.ts` — Publisher bounds, atomic values, links, hidden mode and optional telemetry.
+
+Upstream source versions and adaptation boundaries are recorded in [upstream-zentui.md](upstream-zentui.md).
 
 When adding tests:
 

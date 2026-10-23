@@ -21,7 +21,7 @@ export type ContextThresholds = {
 	error: number;
 };
 
-export type PathDisplayMode = "basename" | "full";
+export type PathDisplayMode = "basename" | "full" | "repository";
 
 export type PathDisplayConfig = {
 	mode: PathDisplayMode;
@@ -119,6 +119,13 @@ export const MIN_PROJECT_REFRESH_INTERVAL_MS = 5_000;
 export type PolishedTuiConfig = {
 	projectRefreshIntervalMs: number;
 	footerFormat: string;
+	footerStyle: "hud" | "hidden";
+	compactFooterFormat: string;
+	responsiveFooter: boolean;
+	compactFooterMaxLines: number;
+	footerVariables: Record<string, string>;
+	customValueColorMode: ExtensionStatusColorMode;
+	customValueColors: Record<string, ColorSpec>;
 	separator: SeparatorStyle;
 	contextStyle: ContextStyle;
 	contextThresholds: ContextThresholds;
@@ -201,6 +208,14 @@ export const FOOTER_FORMAT_VARIABLES = [
 	"running_tools",
 	"active_agents",
 	"sep",
+	"join_sep",
+	"extension_statuses",
+	"subscription",
+	"auto_compaction",
+	"pr_number",
+	"pr_url",
+	"ci",
+	"token_rate",
 ] as const;
 
 /**
@@ -217,6 +232,8 @@ export const FOOTER_FORMAT_ALIASES: Record<string, string> = {
 	duration: "session_duration",
 	session: "session_name",
 	thinking_level: "thinking",
+	thinkingLevel: "thinking",
+	codex_quota: "codex_usage",
 	turn_count: "turn",
 	codex: "codex_usage",
 	tools: "tool_counts",
@@ -253,6 +270,13 @@ export const terminalDefaultColors: PolishedTuiConfig["colors"] = {
 export const defaultConfig: PolishedTuiConfig = {
 	projectRefreshIntervalMs: DEFAULT_PROJECT_REFRESH_INTERVAL_MS,
 	footerFormat: "",
+	footerStyle: "hud",
+	compactFooterFormat: "",
+	responsiveFooter: true,
+	compactFooterMaxLines: 2,
+	footerVariables: {},
+	customValueColorMode: "original",
+	customValueColors: {},
 	separator: "chevron",
 	contextStyle: "text+gauge",
 	contextThresholds: { warning: 70, error: 90 },

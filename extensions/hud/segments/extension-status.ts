@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { stripVTControlCharacters } from "node:util";
 import type {
 	ExtensionStatusColorMode,
@@ -18,9 +19,6 @@ export type ExtensionStatusSegmentsByPlacement = {
 	middle: ExtensionStatusSegment[];
 	right: ExtensionStatusSegment[];
 };
-
-const safeSgrPattern = /\x1b\[[0-9;:]*m/g;
-const sgrPlaceholderPattern = /__ZENTUI_SGR_(\d+)__/g;
 
 function compareKeys(a: ExtensionStatusSegment, b: ExtensionStatusSegment): number {
 	return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
@@ -43,18 +41,40 @@ function hasVisibleStatusText(value: string): boolean {
 }
 
 export function sanitizeExtensionStatusOriginalText(value: string): string {
-	const safeSequences: string[] = [];
-	const protectedValue = value.replace(safeSgrPattern, (sequence) => {
-		const index = safeSequences.push(sequence) - 1;
-		return `__ZENTUI_SGR_${index}__`;
-	});
+	// Only preserve SGR and HTTP(S) OSC 8 links; never title, clipboard or cursor controls.
+	const marker = `__ZENTUI_${randomUUID()}_`;
+	const sequences: Array<{ sequence: string; url: string | undefined }> = [];
+	const protectedValue = value.replace(
+		/\x1b\[[0-9;:]*m|\x1b\]8;[^;\x07\x1b]*;([^\x07\x1b]*)(?:\x07|\x1b\\)/g,
+		(sequence, url: string | undefined) => `${marker}${sequences.push({ sequence, url }) - 1}__`,
+	);
 	const cleaned = normalizeStatusWhitespace(stripVTControlCharacters(protectedValue));
-	const restored = cleaned.replace(sgrPlaceholderPattern, (_match, indexText: string) => {
-		const index = Number.parseInt(indexText, 10);
-		return safeSequences[index] ?? "";
-	});
-
-	return hasVisibleStatusText(restored) ? restored : "";
+	let activeLink = false;
+	const restored = cleaned.replace(
+		new RegExp(`${marker}(\\d+)__`, "g"),
+		(_match, index: string) => {
+			const entry = sequences[Number(index)];
+			if (!entry) return "";
+			const { sequence, url } = entry;
+			if (url === undefined) return sequence;
+			const close = activeLink ? "\x1b]8;;\x07" : "";
+			activeLink = false;
+			if (!url || /[\s\x00-\x1f\x7f-\x9f]/.test(url)) return close;
+			try {
+				const parsed = new URL(url);
+				if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return close;
+				activeLink = true;
+				return `${close}\x1b]8;;${parsed.href}\x07`;
+			} catch {
+				return close;
+			}
+		},
+	);
+	const result = restored + (activeLink ? "\x1b]8;;\x07" : "");
+	if (!hasVisibleStatusText(result)) return "";
+	let lastSgr: string | undefined;
+	for (const match of result.matchAll(/\x1b\[[0-9;:]*m/g)) lastSgr = match[0];
+	return lastSgr && lastSgr !== "\x1b[0m" && lastSgr !== "\x1b[m" ? `${result}\x1b[0m` : result;
 }
 
 export function collectExtensionStatusSegments(
@@ -69,7 +89,7 @@ export function collectExtensionStatusSegments(
 
 	for (const [key, value] of statuses.entries()) {
 		const placement = getExtensionStatusPlacement(config, key);
-		if (placement === "off") continue;
+		if (placement !== "left" && placement !== "middle" && placement !== "right") continue;
 
 		const colorMode = getExtensionStatusColorMode(config, key);
 		const text =

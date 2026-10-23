@@ -36,6 +36,10 @@ export function applyProjectRefreshToState(
 		state.packageVersion = undefined;
 	}
 
+	// Unlike git labels, roots must never use last-good values after a failed probe.
+	state.repositoryCwd = args.cwd;
+	state.repositoryRoot = args.git.kind === "ok" ? args.git.repositoryRoot : undefined;
+
 	if (args.git.kind === "ok") {
 		Object.assign(state, args.git.status);
 	} else if (args.git.kind === "not_a_repo") {

@@ -16,6 +16,7 @@ import {
 	type ExtensionStatusColorMode,
 	type ExtensionStatusPlacement,
 	type FooterRowsConfig,
+	type FooterOptionsPatch,
 	type FooterSegmentsConfig,
 	type GitBranchConfig,
 	type GitBranchMaxLength,
@@ -45,7 +46,7 @@ const extensionStatusPlacementValues: ExtensionStatusPlacement[] = [
 const extensionStatusColorModeValues: ExtensionStatusColorMode[] = ["zentui", "original"];
 const contextStyleValues: ContextStyle[] = ["text", "gauge", "text+gauge"];
 const separatorStyleValues: SeparatorStyle[] = ["pipe", "dot", "chevron", "none"];
-const pathDisplayModeValues: PathDisplayMode[] = ["basename", "full"];
+const pathDisplayModeValues: PathDisplayMode[] = ["basename", "full", "repository"];
 const pathDepthValues = ["0", "1", "2", "3", "4", "5"] as const;
 const branchLengthPresetValues = ["full", "10", "20", "30", "40", "50"] as const;
 const iconModeValues: IconMode[] = ["auto", "nerd", "ascii"];
@@ -74,6 +75,7 @@ type SettingsCommandDeps = {
 	setFooterRows: (patch: Partial<FooterRowsConfig>) => void;
 	setFooterSegments: (patch: Partial<FooterSegmentsConfig>) => void;
 	setFooterFormat: (value: string) => void;
+	setFooterOptions?: (patch: FooterOptionsPatch, ctx: ExtensionContext) => void;
 	setIconMode: (mode: IconMode) => void;
 	setContextStyle: (style: ContextStyle) => void;
 	setSeparator: (separator: SeparatorStyle) => void;
@@ -181,6 +183,14 @@ const footerSegmentSettingDescriptions: Record<FooterSegmentSettingId, string> =
 };
 
 const directCommandSuggestions = [
+	"layout",
+	"extensions",
+	"segments",
+	"footer hud",
+	"footer hidden",
+	"footer native",
+	"compact-format clear",
+	'compact-format "$cwd$fill$context"',
 	"statusline enable",
 	"statusline disable",
 	"statusline toggle",
@@ -262,7 +272,7 @@ function isContextStyle(value: string): value is ContextStyle {
 }
 
 function isPathDisplayMode(value: string): value is PathDisplayMode {
-	return value === "basename" || value === "full";
+	return value === "basename" || value === "full" || value === "repository";
 }
 
 function isPathDepthValue(value: string): boolean {
@@ -323,7 +333,7 @@ function footerSegmentPatch(
 }
 
 function usageText(): string {
-	return 'Usage: /zentui statusline [enable|disable|toggle], /zentui row [project|session|activity|usage] [enable|disable|toggle], or /zentui format "<template>"';
+	return 'Usage: /zentui statusline [enable|disable|toggle], /zentui row [project|session|activity|usage] [enable|disable|toggle], or /zentui format "<template>", /zentui compact-format "<template>"|clear, /zentui footer hud|hidden|native, /zentui layout|extensions|segments';
 }
 
 function isFooterRow(value: string): value is keyof FooterRowsConfig {
@@ -376,7 +386,7 @@ function parseDirectFeatureCommand(
 
 function parseFormatCommand(args: string): { value: string | undefined } | undefined {
 	const trimmed = args.trim();
-	if (!trimmed.toLowerCase().startsWith("format")) return undefined;
+	if (!/^format(?:\s|$)/i.test(trimmed)) return undefined;
 
 	const rest = trimmed.slice("format".length).trim();
 	if (!rest || rest.toLowerCase() === "clear") return { value: undefined };
@@ -438,6 +448,30 @@ function buildItems(
 	if (section === "layout") {
 		return [
 			{
+				id: "footerStyle",
+				label: "Footer content",
+				currentValue: config.footerStyle,
+				values: ["hud", "hidden"],
+			},
+			{
+				id: "responsiveFooter",
+				label: "Responsive compact",
+				currentValue: featureValue(config.responsiveFooter),
+				values: featureStateValues,
+			},
+			{
+				id: "compactFooterMaxLines",
+				label: "Compact max lines",
+				currentValue: String(config.compactFooterMaxLines),
+				values: ["1", "2", "3", "4", "5", "6", "7", "8"],
+			},
+			{
+				id: "customValueColorMode",
+				label: "Custom value colors",
+				currentValue: config.customValueColorMode,
+				values: ["original", "zentui"],
+			},
+			{
 				id: "contextStyle",
 				label: "Context style",
 				description: "Render context as text, a gauge bar, or both.",
@@ -454,7 +488,7 @@ function buildItems(
 			{
 				id: "pathDisplay",
 				label: "Path display",
-				description: "Show cwd as basename or full path (home contracted to ~).",
+				description: "Show cwd as basename, full path (~), or relative to the repository root.",
 				currentValue: config.pathDisplay.mode,
 				values: pathDisplayModeValues,
 			},
@@ -462,7 +496,7 @@ function buildItems(
 				id: "pathDepth",
 				label: "Path depth",
 				description:
-					"In full mode, trailing directories to show (0 = all, max 5). Ignored for basename.",
+					"In full/repository mode, trailing directories to show (0 = all, max 5). Ignored for basename.",
 				currentValue: String(config.pathDisplay.depth),
 				values: [...pathDepthValues],
 			},
@@ -575,6 +609,38 @@ export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCo
 		handler: async (_args, ctx) => {
 			const args = typeof _args === "string" ? _args : "";
 
+			const initialSection = new Map<string, SettingsSection>([
+				["layout", "layout"],
+				["extensions", "extensionSegments"],
+				["segments", "builtinSegments"],
+			]).get(args.trim().toLowerCase());
+
+			const footerCommand = /^footer\s+(hud|hidden|native)$/i.exec(args.trim());
+			const compactCommand = /^compact-format(?:\s|$)/i.test(args.trim())
+				? parseFormatCommand(args.trim().replace(/^compact-format/i, "format"))
+				: undefined;
+			if (footerCommand || compactCommand) {
+				try {
+					if (footerCommand) {
+						const style = footerCommand[1]?.toLowerCase();
+						if (style === "hud" || style === "hidden") {
+							if (!deps.setFooterOptions) throw new Error("Footer options unavailable");
+							deps.setFooterOptions({ footerStyle: style }, ctx);
+						}
+						deps.setUiFeatures({ statusLine: style !== "native" }, ctx);
+					} else if (compactCommand) {
+						if (!deps.setFooterOptions) throw new Error("Footer options unavailable");
+						deps.setFooterOptions({ compactFooterFormat: compactCommand.value ?? "" }, ctx);
+					}
+					deps.requestRender();
+					if (ctx.hasUI) ctx.ui.notify("Footer settings updated", "info");
+				} catch (error) {
+					const message = error instanceof Error ? error.message : String(error);
+					if (ctx.hasUI) ctx.ui.notify(`Could not update footer settings: ${message}`, "error");
+				}
+				return;
+			}
+
 			const formatCommand = parseFormatCommand(args);
 			if (formatCommand) {
 				try {
@@ -630,7 +696,7 @@ export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCo
 				return;
 			}
 
-			if (args.trim()) {
+			if (args.trim() && !initialSection) {
 				if (ctx.hasUI) ctx.ui.notify(usageText(), "warning");
 				return;
 			}
@@ -640,7 +706,7 @@ export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCo
 
 			await ctx.ui.custom<void>((tui, theme, _keybindings, done) => {
 				const settingsListTheme = deps.settingsListTheme ?? getSettingsListTheme();
-				let activeSection: SettingsSection = "coloring";
+				let activeSection: SettingsSection = initialSection ?? "coloring";
 				const applyFeatureChange = (id: FeatureSettingId, newValue: FeatureState) => {
 					deps.setUiFeatures(featurePatch(id, newValue), ctx);
 					deps.requestRender();
@@ -667,6 +733,25 @@ export function registerZentuiSettingsCommand(pi: ExtensionAPI, deps: SettingsCo
 								if (isFeatureSettingId(id) && isFeatureState(newValue)) {
 									applyFeatureChange(id, newValue);
 									settingsList.updateValue(id, newValue);
+									return;
+								}
+
+								const footerPatch: FooterOptionsPatch | undefined =
+									id === "footerStyle" && (newValue === "hud" || newValue === "hidden")
+										? { footerStyle: newValue }
+										: id === "responsiveFooter" && isFeatureState(newValue)
+											? { responsiveFooter: newValue === "enabled" }
+											: id === "compactFooterMaxLines" && /^[1-8]$/.test(newValue)
+												? { compactFooterMaxLines: Number(newValue) }
+												: id === "customValueColorMode" && isExtensionStatusColorMode(newValue)
+													? { customValueColorMode: newValue }
+													: undefined;
+								if (footerPatch) {
+									if (!deps.setFooterOptions) throw new Error("Footer options unavailable");
+									deps.setFooterOptions(footerPatch, ctx);
+									settingsList.updateValue(id, newValue);
+									deps.requestRender();
+									tui.requestRender();
 									return;
 								}
 

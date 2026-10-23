@@ -4,6 +4,10 @@ import { ensureConfigExists, loadConfig, type PolishedTuiConfig } from "./config
 import { installFooter } from "./footer/index.js";
 import { buildSessionDurationLabel } from "./telemetry/format.js";
 import { footerClockNeeds } from "./session/footer-clock.js";
+import { demandedPublisherKeys, footerTemplateReferences } from "./footer/demand.js";
+import { CustomVariables } from "./segments/custom-variables.js";
+import { createLiveMetadata } from "./segments/live-metadata.js";
+import { FooterTelemetryController } from "./telemetry/optional.js";
 import { emptyGitStatus } from "./segments/git.js";
 import { LiveContextController } from "./session/live-context.js";
 import { createProjectStateController } from "./state/project-controller.js";
@@ -32,6 +36,8 @@ export default function (pi: ExtensionAPI) {
 	let requestFooterRender: (() => void) | undefined;
 	let getActiveExtensionStatuses: () => ReadonlyMap<string, string> = () => new Map();
 	let footerInstalled = false;
+	let footerOwned = false;
+	let currentContext: ExtensionContext | undefined;
 	let stopSessionTimer: () => void = () => {};
 	let lastDurationLabel = "";
 	let sessionTimerKey = "";
@@ -46,8 +52,43 @@ export default function (pi: ExtensionAPI) {
 	};
 	const liveContext = new LiveContextController(sessionLifecycle, refresh);
 	const getCurrentConfig = () => currentConfig;
-	const syncFooterState = (ctx: ExtensionContext) =>
+	const optionalTelemetry = new FooterTelemetryController();
+	let templateValues = new Map<string, string>();
+	const metadataDemand = () => {
+		const references = footerTemplateReferences(currentConfig);
+		// A valid explicit ci alias owns this name, and must not trigger GitHub.
+		if (Object.hasOwn(currentConfig.footerVariables, "ci")) references.delete("ci");
+		return references;
+	};
+	const metadata = createLiveMetadata(pi, {
+		getDemand: metadataDemand,
+		isActive: () => footerInstalled && footerOwned && sessionLifecycle.isCurrent(),
+		onChange: refresh,
+	});
+	const customVariables = new CustomVariables(
+		pi.events,
+		(key) => {
+			if (!footerInstalled || !footerOwned || !sessionLifecycle.isCurrent()) return false;
+			const keys = demandedPublisherKeys(currentConfig);
+			return key === undefined ? keys.size > 0 : keys.has(key);
+		},
+		refresh,
+	);
+	const syncFooterState = (ctx: ExtensionContext) => {
+		currentContext = ctx;
 		syncState(state, ctx, currentConfig.icons.cacheHit);
+		const references =
+			footerInstalled && footerOwned ? footerTemplateReferences(currentConfig) : new Set<string>();
+		const optional = optionalTelemetry.resolve(ctx, {
+			subscription: references.has("subscription"),
+			autoCompaction: references.has("auto_compaction"),
+		});
+		templateValues = new Map([
+			["subscription", optional.subscription ? "(sub)" : ""],
+			["auto_compaction", optional.autoCompaction ? "(auto)" : ""],
+		]);
+		metadata.sync(ctx);
+	};
 	const availableSkillReferences = (promptSkills: readonly Skill[] = []): SkillReference[] => {
 		const byName = new Map<string, SkillReference>();
 		try {
@@ -79,14 +120,27 @@ export default function (pi: ExtensionAPI) {
 		lifecycle: sessionLifecycle,
 		getConfig: getCurrentConfig,
 		requestRender: refresh,
+		onRefresh: () => {
+			if (currentContext) metadata.sync(currentContext);
+		},
 	});
-	const scheduleProjectRefresh = projectController.schedule;
+	const scheduleProjectRefresh = (ctx: ExtensionContext) => {
+		if (
+			footerInstalled &&
+			footerOwned &&
+			currentConfig.features.statusLine &&
+			currentConfig.footerStyle !== "hidden"
+		) {
+			projectController.schedule(ctx);
+		}
+	};
 
 	const refreshInteractiveState = (ctx: ExtensionContext, project = false) => {
 		if (!sessionLifecycle.isCurrent() || !ctx.hasUI) return;
 		syncFooterState(ctx);
 		startSessionTimer();
-		if (project && currentConfig.features.statusLine) scheduleProjectRefresh(ctx);
+		if (project && currentConfig.features.statusLine && currentConfig.footerStyle !== "hidden")
+			scheduleProjectRefresh(ctx);
 		refresh();
 	};
 
@@ -95,7 +149,7 @@ export default function (pi: ExtensionAPI) {
 			currentConfig,
 			state.telemetry.tools.some((tool) => tool.status === "running"),
 		);
-		const key = footerInstalled ? JSON.stringify(needs) : "";
+		const key = footerInstalled && footerOwned ? JSON.stringify(needs) : "";
 		if (sessionTimerKey === key) return;
 		stopSessionTimer();
 		sessionTimerKey = key;
@@ -107,7 +161,12 @@ export default function (pi: ExtensionAPI) {
 			duration: needsDuration,
 			activity: needsActivityClock,
 		} = needs;
-		if (!footerInstalled || !(needsWallClock || needsDuration || needsActivityClock)) return;
+		if (
+			!footerInstalled ||
+			!footerOwned ||
+			!(needsWallClock || needsDuration || needsActivityClock)
+		)
+			return;
 
 		const timer = setInterval(() => {
 			if (!sessionLifecycle.isCurrent()) return;
@@ -141,9 +200,24 @@ export default function (pi: ExtensionAPI) {
 				getActiveExtensionStatuses = fn ?? (() => new Map());
 			},
 			getLiveContext: () => liveContext.get(),
+			getCustomValues: () => customVariables.snapshot(),
+			getTemplateValues: () => new Map([...templateValues, ...metadata.values()]),
+			setOwnership(owned) {
+				footerOwned = owned;
+				customVariables.reconcile();
+				if (!owned) {
+					stopSessionTimer();
+					metadata.stop();
+					projectController.stop();
+				} else if (footerInstalled && currentContext) {
+					syncFooterState(currentContext);
+					startSessionTimer();
+					if (currentConfig.footerStyle !== "hidden") projectController.start(currentContext);
+				}
+			},
 		});
 		footerInstalled = true;
-		projectController.start(ctx);
+		syncFooterState(ctx);
 		refresh();
 		startSessionTimer();
 	};
@@ -153,19 +227,31 @@ export default function (pi: ExtensionAPI) {
 		projectController.stop();
 		ctx.ui.setFooter(undefined);
 		footerInstalled = false;
+		footerOwned = false;
+		customVariables.clear();
+		metadata.stop();
 		requestFooterRender = undefined;
 		getActiveExtensionStatuses = () => new Map();
 	};
 
 	const applyConfiguredUi = (ctx: ExtensionContext) => {
 		if (!isTuiContext(ctx)) return;
-		if (currentConfig.features.statusLine) installStatusLine(ctx);
-		else if (footerInstalled) uninstallStatusLine(ctx);
+		if (currentConfig.features.statusLine) {
+			installStatusLine(ctx);
+			if (currentConfig.footerStyle === "hidden") projectController.stop();
+			else if (footerOwned) projectController.start(ctx);
+		} else if (footerInstalled) uninstallStatusLine(ctx);
 	};
 
 	const installUi = (ctx: ExtensionContext) => {
 		if (!isTuiContext(ctx)) return;
 		footerInstalled = false;
+		footerOwned = false;
+		customVariables.clear();
+		metadata.reset();
+		optionalTelemetry.reset();
+		state.repositoryRoot = undefined;
+		state.repositoryCwd = undefined;
 		ensureConfigExists();
 		currentConfig = loadConfig();
 		syncFooterState(ctx);
@@ -177,6 +263,11 @@ export default function (pi: ExtensionAPI) {
 	const cleanupUi = (ctx?: ExtensionContext) => {
 		if (!ctx || !sessionLifecycle.isCurrent()) return;
 		sessionLifecycle.shutdown();
+		footerOwned = false;
+		customVariables.clear();
+		metadata.stop();
+		optionalTelemetry.reset();
+		currentContext = undefined;
 		stopSessionTimer();
 		projectController.stop();
 		requestFooterRender = undefined;
@@ -203,6 +294,8 @@ export default function (pi: ExtensionAPI) {
 		getConfig: getCurrentConfig,
 		setConfig(config) {
 			currentConfig = config;
+			customVariables.reconcile();
+			if (currentContext) syncFooterState(currentContext);
 		},
 		applyConfiguredUi,
 		restartSessionTimer: startSessionTimer,

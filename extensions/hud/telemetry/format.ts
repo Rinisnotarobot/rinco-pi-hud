@@ -11,6 +11,7 @@ import type {
 	PathDisplayMode,
 } from "../config/config.js";
 import type { GitCommitInfo, GitMetricsInfo } from "../segments/git.js";
+import { repositoryRelativePath } from "../segments/repository-root.js";
 import type { IconMode } from "../ui/icons.js";
 import { resolveOsIcon, resolvePackageIcon, resolveRuntimeSymbol } from "../ui/icons.js";
 import type { PackageVersionResult } from "../segments/package-version.js";
@@ -355,9 +356,11 @@ export function formatPackageVersionSegment(
 
 export type FormatCwdOptions = {
 	mode?: PathDisplayMode;
-	/** Trailing directory components to keep in full mode. 0 = unlimited. */
+	/** Trailing directory components to keep in full/repository mode. 0 = unlimited. */
 	depth?: number;
 	home?: string;
+	/** Root verified by the project refresh for this exact cwd. */
+	repositoryRoot?: string;
 };
 
 function normalizeDisplayPath(cwd: string): string {
@@ -400,8 +403,7 @@ function applyPathDepth(path: string, depth: number): string {
 export function formatCwdLabel(cwd: string, cwdIcon: string, options?: FormatCwdOptions): string {
 	const mode = options?.mode ?? "basename";
 	const normalized = normalizeDisplayPath(cwd);
-	let pathText: string;
-	if (mode === "full") {
+	const fullPath = (depth = options?.depth ?? 0) => {
 		const home =
 			options?.home ??
 			(() => {
@@ -411,7 +413,14 @@ export function formatCwdLabel(cwd: string, cwdIcon: string, options?: FormatCwd
 					return "";
 				}
 			})();
-		pathText = applyPathDepth(toHomePath(normalized, home), options?.depth ?? 0);
+		return applyPathDepth(toHomePath(normalized, home), depth);
+	};
+	let pathText: string;
+	if (mode === "full") {
+		pathText = fullPath();
+	} else if (mode === "repository") {
+		const relative = repositoryRelativePath(cwd, options?.repositoryRoot);
+		pathText = relative === undefined ? fullPath(0) : applyPathDepth(relative, options?.depth ?? 0);
 	} else if (normalized === "/") {
 		pathText = "/";
 	} else {

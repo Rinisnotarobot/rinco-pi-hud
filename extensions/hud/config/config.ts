@@ -50,7 +50,10 @@ export {
 
 export { ensureConfigExists, loadConfig } from "./file-io.js";
 
+export type { FooterOptionsPatch } from "./persist.js";
+
 export {
+	saveFooterOptionsPatch,
 	saveColorSourcesPatch,
 	saveContextStylePatch,
 	saveContextThresholdsPatch,

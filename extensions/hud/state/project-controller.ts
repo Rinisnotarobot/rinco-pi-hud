@@ -32,6 +32,7 @@ interface ProjectStateControllerDeps {
 	lifecycle: SessionLifecycle;
 	getConfig: () => PolishedTuiConfig;
 	requestRender: () => void;
+	onRefresh?: (cwd: string) => void;
 }
 
 /** Own project polling, throttling, and stale-session protection. */
@@ -40,6 +41,7 @@ export function createProjectStateController({
 	lifecycle,
 	getConfig,
 	requestRender,
+	onRefresh,
 }: ProjectStateControllerDeps): ProjectStateController {
 	let stopInterval: StopProjectRefreshInterval = () => {};
 	let lastProjectCwd: string | undefined;
@@ -52,7 +54,10 @@ export function createProjectStateController({
 	}: ProjectRefreshTarget): Promise<void> => {
 		if (targetEpoch !== epoch || !lifecycle.isCurrent(generation)) return;
 		const config = getConfig();
-		const format = config.footerFormat;
+		const format = [
+			config.footerFormat,
+			config.responsiveFooter ? config.compactFooterFormat : "",
+		].join(" ");
 		const formatNeedsTag = /\$\{?(?:git_tag|tag)\b/.test(format);
 		const formatNeedsCommit = /\$\{?(?:git_commit|commit)\b/.test(format);
 		const formatNeedsMetrics = /\$\{?(?:git_metrics|git_added|git_deleted)\b/.test(format);
@@ -73,6 +78,7 @@ export function createProjectStateController({
 			Promise.resolve(countConfigEntries(cwd)),
 		]);
 		if (targetEpoch !== epoch || !lifecycle.isCurrent(generation)) return;
+		onRefresh?.(cwd);
 		state.configCounts = configCounts;
 		lastProjectCwd = applyProjectRefreshToState(state, {
 			cwd,

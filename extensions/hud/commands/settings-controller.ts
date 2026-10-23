@@ -6,6 +6,7 @@ import {
 	saveExtensionStatusColorMode,
 	saveExtensionStatusPlacement,
 	saveFooterFormatPatch,
+	saveFooterOptionsPatch,
 	saveFooterRowsPatch,
 	saveFooterSegmentsPatch,
 	saveGitBranchPatch,
@@ -46,6 +47,11 @@ export function registerSettingsController(pi: ExtensionAPI, deps: SettingsContr
 		},
 		setFooterSegments(patch) {
 			updateConfig(saveFooterSegmentsPatch(patch));
+			deps.restartSessionTimer();
+		},
+		setFooterOptions(patch, ctx) {
+			updateConfig(saveFooterOptionsPatch(patch));
+			deps.applyConfiguredUi(ctx);
 			deps.restartSessionTimer();
 		},
 		setFooterFormat(value) {

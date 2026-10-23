@@ -4,7 +4,12 @@ License: MIT.
 
 This package contains a dynamic HUD footer for Pi, adapted from the Footer
 portion of pi-zentui by Luka: https://github.com/lmilojevicc/pi-zentui
-License: MIT.
+Footer integration snapshot: version 0.32.0, commit
+9e8e798cfcce26cee9e1def4daf3668616482610.
+Adapted modules include template joining/compact layout, custom values,
+repository paths, optional telemetry, and passive live metadata.
+License: MIT. The original copyright and license text is retained at
+extensions/hud/ZENTUI-LICENSE.
 
 Session, model, activity, MCP, configuration-count, and Codex subscription
 status capabilities are adapted from pi-shannon-statusline by RealAlexandreAI:

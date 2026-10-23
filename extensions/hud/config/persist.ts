@@ -177,6 +177,51 @@ export function saveFooterSegmentsPatch(
 	});
 }
 
+export type FooterOptionsPatch = Partial<
+	Pick<
+		PolishedTuiConfig,
+		| "compactFooterFormat"
+		| "responsiveFooter"
+		| "compactFooterMaxLines"
+		| "customValueColorMode"
+		| "footerStyle"
+	>
+>;
+
+export function saveFooterOptionsPatch(
+	patch: FooterOptionsPatch,
+	path = configPath,
+): PolishedTuiConfig {
+	return mutateConfig(path, (record) => {
+		if (!isRecord(patch)) return;
+		if (
+			Object.hasOwn(patch, "compactFooterFormat") &&
+			typeof patch.compactFooterFormat === "string"
+		)
+			record.compactFooterFormat = sanitizeConfigText(patch.compactFooterFormat, 4096);
+		if (Object.hasOwn(patch, "responsiveFooter") && typeof patch.responsiveFooter === "boolean")
+			record.responsiveFooter = patch.responsiveFooter;
+		if (
+			Object.hasOwn(patch, "compactFooterMaxLines") &&
+			typeof patch.compactFooterMaxLines === "number" &&
+			Number.isInteger(patch.compactFooterMaxLines) &&
+			patch.compactFooterMaxLines >= 1 &&
+			patch.compactFooterMaxLines <= 8
+		)
+			record.compactFooterMaxLines = patch.compactFooterMaxLines;
+		if (
+			Object.hasOwn(patch, "customValueColorMode") &&
+			isExtensionStatusColorMode(patch.customValueColorMode)
+		)
+			record.customValueColorMode = patch.customValueColorMode;
+		if (
+			Object.hasOwn(patch, "footerStyle") &&
+			(patch.footerStyle === "hud" || patch.footerStyle === "hidden")
+		)
+			record.footerStyle = patch.footerStyle;
+	});
+}
+
 export function saveFooterFormatPatch(value: string, path = configPath): PolishedTuiConfig {
 	return mutateConfig(path, (record) => {
 		record.footerFormat = typeof value === "string" ? sanitizeConfigText(value, 4096) : "";

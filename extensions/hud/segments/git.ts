@@ -53,7 +53,9 @@ export type GitStatusSummary = {
 };
 
 export type GitReadResult =
-	{ kind: "ok"; status: GitStatusSummary } | { kind: "not_a_repo" } | { kind: "error" };
+	| { kind: "ok"; status: GitStatusSummary; repositoryRoot?: string }
+	| { kind: "not_a_repo" }
+	| { kind: "error" };
 
 export type GitStatePaths = {
 	rebaseMerge?: string;
@@ -300,34 +302,39 @@ export async function readGitStatus(
 	try {
 		const numstatArgs = ["diff", "HEAD", "--numstat"];
 		if (options.ignoreSubmodules) numstatArgs.push("--ignore-submodules=all");
-		const [{ stdout: statusStdout }, stashResult, tagResult, metricsResult] = await Promise.all([
-			execFileAsync("git", ["status", "--porcelain=2", "--branch"], {
-				cwd,
-				timeout: GIT_COMMAND_TIMEOUT_MS,
-			}),
-			execFileAsync("git", ["stash", "list"], {
-				cwd,
-				timeout: GIT_COMMAND_TIMEOUT_MS,
-			}).catch(() => ({ stdout: "" })),
-			readExactTag
-				? execFileAsync("git", ["describe", "--tags", "--exact-match", "HEAD"], {
-						cwd,
-						timeout: GIT_COMMAND_TIMEOUT_MS,
-					}).then(
-						(r) => ({ stdout: typeof r.stdout === "string" ? r.stdout : String(r.stdout) }),
-						() => ({ stdout: "" }),
-					)
-				: Promise.resolve({ stdout: "" }),
-			readMetrics
-				? execFileAsync("git", numstatArgs, {
-						cwd,
-						timeout: GIT_COMMAND_TIMEOUT_MS,
-					}).then(
-						(r) => ({ stdout: typeof r.stdout === "string" ? r.stdout : String(r.stdout) }),
-						() => ({ stdout: "", failed: true as const }),
-					)
-				: Promise.resolve({ stdout: "", failed: true as const }),
-		]);
+		const [{ stdout: statusStdout }, stashResult, tagResult, metricsResult, rootResult] =
+			await Promise.all([
+				execFileAsync("git", ["status", "--porcelain=2", "--branch"], {
+					cwd,
+					timeout: GIT_COMMAND_TIMEOUT_MS,
+				}),
+				execFileAsync("git", ["stash", "list"], {
+					cwd,
+					timeout: GIT_COMMAND_TIMEOUT_MS,
+				}).catch(() => ({ stdout: "" })),
+				readExactTag
+					? execFileAsync("git", ["describe", "--tags", "--exact-match", "HEAD"], {
+							cwd,
+							timeout: GIT_COMMAND_TIMEOUT_MS,
+						}).then(
+							(r) => ({ stdout: typeof r.stdout === "string" ? r.stdout : String(r.stdout) }),
+							() => ({ stdout: "" }),
+						)
+					: Promise.resolve({ stdout: "" }),
+				readMetrics
+					? execFileAsync("git", numstatArgs, {
+							cwd,
+							timeout: GIT_COMMAND_TIMEOUT_MS,
+						}).then(
+							(r) => ({ stdout: typeof r.stdout === "string" ? r.stdout : String(r.stdout) }),
+							() => ({ stdout: "", failed: true as const }),
+						)
+					: Promise.resolve({ stdout: "", failed: true as const }),
+				execFileAsync("git", ["rev-parse", "--show-toplevel"], {
+					cwd,
+					timeout: GIT_COMMAND_TIMEOUT_MS,
+				}).catch(() => ({ stdout: "" })),
+			]);
 		const stdoutText = typeof statusStdout === "string" ? statusStdout : String(statusStdout);
 		const stashStdout =
 			typeof stashResult.stdout === "string" ? stashResult.stdout : String(stashResult.stdout);
@@ -353,6 +360,7 @@ export async function readGitStatus(
 		const operation = await readGitOperationState(cwd);
 		return {
 			kind: "ok",
+			repositoryRoot: String(rootResult.stdout).replace(/\r?\n$/, "") || undefined,
 			status: {
 				...status,
 				...operation,

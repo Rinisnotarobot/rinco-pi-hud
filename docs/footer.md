@@ -26,6 +26,30 @@ Control each default-layout row independently:
 
 The command shape is `/zentui row <project|session|activity|usage> <enable|disable|toggle>`. Values persist under `footerRows`; all four default to `true`. Row switches apply only to the default layout and do not alter a custom single-line `footerFormat`.
 
+## Footer modes
+
+- `/zentui footer hud`: enable the normal four groups or configured templates.
+- `/zentui footer hidden`: show only allowed third-party statuses, no row when none exist.
+- `/zentui footer native`: release ownership to Pi; saved HUD choices remain unchanged.
+
+Hidden and HUD share the existing per-key `extensionStatuses` placement/color policy.
+Native is Pi-owned and does not apply this policy. `/zentui layout`, `segments`, and
+`extensions` open the corresponding settings tabs directly.
+
+## Repository paths
+
+`pathDisplay` defaults to `{ "mode": "basename", "depth": 0 }`.
+Select `repository` in Layout → Path display, or set:
+
+```json
+{ "pathDisplay": { "mode": "repository", "depth": 2 } }
+```
+
+Repository root displays `.`; `/repo/packages/core/src` displays `…/core/src` at depth 2.
+Zero depth is unlimited. Worktrees are supported. Until a root qualified for the current cwd
+is available, missing/failed/unsafe roots fall back to the unlimited full path with home `~`
+abbreviation; a stale root is never used to produce a relative path.
+
 ## Colors and theme switching
 
 By default, `colorSources.starship` is `"theme"`. Built-in footer colors use semantic Pi theme tokens such as `accent`, `muted`, `success`, `warning`, and `error`; runtime labels also use the active theme. Switching themes, including automatic light/dark switching, recolors the footer without reloading the extension. This applies to both the default rows and custom templates.
@@ -99,6 +123,12 @@ Clear it:
 - `( ... )` — conditional group; hidden when all contained variables are empty
 - `$fill` — layout partition marker (0 = left only, 1 = left/right, 2 = left/middle/right)
 - `$sep` — styled ` | ` separator, does not cause a conditional group to show
+- `$join_sep` — insert the styled separator only between populated sibling fields
+
+For example, `$session_name$join_sep($git_branch $git_status)$join_sep$runtime` joins only
+populated fields, with no orphan separator when an intervening field is missing. Each group
+and top-level fill/wrap boundary has its own join scope. Do not pad `$join_sep` with spaces;
+the separator already owns spacing. Templates without it retain their previous behavior.
 
 ### Variable list
 
@@ -143,7 +173,13 @@ Clear it:
 | `$tool_counts` | Native tool completion counts |
 | `$running_tools` | Recently running tools |
 | `$active_agents` | Active primary agent runs |
+| `$subscription` | Optional `(sub)` when Pi reports OAuth subscription use (also kimi-coding) |
+| `$auto_compaction` | Optional `(auto)` when public, trust-aware Pi settings report automatic compaction |
+| `$pr_number` / `$pr_url` | Current open GitHub PR number / plain HTTPS URL, qualified against local HEAD |
+| `$ci` | `CI passing`, `CI running`, `CI failed`, `CI no checks`, or `CI stale`; unavailable data is empty |
+| `$token_rate` | Current interaction’s completed-call average, e.g. `48 tok/s avg` |
 | `$sep` | Styled ` | ` |
+| `$join_sep` | Conditional sibling separator |
 | `$fill` | Layout marker, renders nothing |
 
 ### Aliases
@@ -158,12 +194,110 @@ $tag → $git_tag
 $duration → $session_duration
 $session → $session_name
 $thinking_level → $thinking
+$thinkingLevel → $thinking
+$codex_quota → $codex_usage
 $turn_count → $turn
 $codex → $codex_usage
 $tools → $tool_counts
 $agents → $active_agents
 $separator → $sep
 ```
+
+## Opt-in compact templates
+
+Set a separate narrow layout (used below 80 terminal columns):
+
+```text
+/zentui compact-format "$cwd$wrap(on $git_branch)$fill$context$wrap_sep$tokens$wrap_sep$extension_statuses"
+```
+
+`$wrap` starts an independently packable chunk with a space boundary.
+`$wrap_sep` uses the configured default-layout separator only when chunks share a row.
+The first top-level `$fill` divides left/right zones; right-hand chunks have priority in
+template order and are right-aligned. Nested/additional fills do not create extra zones.
+`$extension_statuses` expands allowed third-party statuses into separate chunks; the existing
+`$extensions` still reports installed packages. Wide templates keep their existing status placements.
+
+`compactFooterMaxLines` defaults to 2 (range 1–8), and omitted/truncated chunks use `…`.
+Layout → Responsive compact controls `responsiveFooter`; an empty compact format is inert.
+Use `/zentui compact-format clear` to return to the existing layout at every width.
+Custom templates and wide templates are otherwise unchanged; arbitrary narrow layouts cannot keep every field.
+
+## Custom extension values
+
+Alias stable publisher keys in JSON, then explicitly reference them in templates:
+
+```json
+{
+  "footerVariables": { "quota": "@scope/usage:quota" },
+  "customValueColorMode": "original",
+  "customValueColors": { "@scope/usage:quota": "bold success" },
+  "footerFormat": "$cwd$fill($quota)($sep$cost)",
+  "compactFooterFormat": "$cwd$fill($quota)$wrap_sep$context"
+}
+```
+
+Aliases cannot shadow builtins, builtin aliases, structural/prototype names, except an explicit
+`ci` alias may replace GitHub CI and suppress its query. At most 16 aliases are accepted.
+Unpublished/empty values drop optional groups. Nothing is automatically appended to templates.
+
+Original color mode preserves safe publisher SGR/HTTP(S) links; Zentui mode uses the current
+HUD extension-status color. `customValueColors` overrides are keyed by publisher ID across
+aliases: explicit styles replace publisher styling, `""` removes styling, and deleting a leaf
+restores inheritance. These JSON-only per-value overrides are independent of `setStatus()` colors.
+Layout → Custom value colors changes the shared mode.
+
+Publish through Pi's shared event bus using Zentui protocol v1:
+
+```typescript
+const key = "@scope/usage:quota";
+const capability = { supported: false, active: false, key };
+pi.events.emit("zentui:variable-capability", capability);
+if (capability.active) {
+  pi.events.emit("zentui:variable", { key, text: "Quota 80%" });
+  ctx.ui.setStatus(key, undefined); // remove only your own fallback
+} else {
+  ctx.ui.setStatus(key, "Quota 80%");
+}
+// Removal also works after demand becomes inactive:
+pi.events.emit("zentui:variable", { key, text: undefined });
+```
+
+Capability probes receive `supported: true`, `version: 1`, and current `active` demand.
+Probe again on each publisher refresh. Active means an owned, enabled current TUI Footer
+references the alias in its wide or enabled compact template, not guaranteed visibility at every width.
+Hidden/native/disabled/unowned consumers are inactive. Registry limits: 16 publisher keys,
+64 UTF-16 units per key, 256 per raw text. Inactive/malformed/oversized updates are ignored;
+empty text removes a value. Session replacement, shutdown or lost ownership/demand clears values.
+Publishers must republish on reactivation and own their refresh/freshness resources.
+A custom value is kept whole or omitted with template recomposition, never partially cropped.
+
+## Status hyperlinks and live metadata
+
+Third-party statuses in `original` mode preserve only SGR and HTTP(S) OSC 8 hyperlinks.
+Unsafe protocols, title, clipboard, cursor controls and embedded line breaks are stripped;
+links and styles are closed before adjacent content. Zentui mode strips publisher styling/links.
+
+```text
+/zentui format "$cwd( · PR #$pr_number)( · $ci)$fill($token_rate)"
+```
+
+PR/CI collection is opt-in through template references and requires installed/authenticated
+`gh` plus an unambiguous `github.com` Git remote. No tools are installed or authenticated
+automatically, and no fetch/write is performed. Repository/head changes invalidate results;
+missing CLI/auth/PR, mismatched local/PR HEAD, detached HEAD or conflicting remotes yield empty values.
+A 30-second cache is refreshed by normal session/project synchronization, not an extra polling timer.
+A stale retained check snapshot shows `CI stale`. An explicit `ci` custom alias uses only publisher data.
+
+`$token_rate` divides completed output by observed model-call duration in the current interaction.
+It includes first-byte wait, excludes tools/gaps, and never estimates in-flight output speed.
+It retains completed values until the next interaction; incomplete measurements show `— tok/s avg`.
+
+Optional subscription and compaction markers use public Pi capabilities only and render empty
+when unavailable. Automatic compaction reads respect public project trust and are refreshed during
+normal Footer synchronization. They do not change Pi settings.
+
+See [the integration record](upstream-zentui.md) for the pinned source and differences from full Zentui.
 
 ## Model quota
 

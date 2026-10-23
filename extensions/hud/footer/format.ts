@@ -7,6 +7,8 @@
  * variable (and nested group) renders empty.
  */
 
+import { stripVTControlCharacters } from "node:util";
+
 export type FormatToken = Readonly<
 	| { kind: "text"; value: string }
 	| { kind: "var"; name: string }
@@ -183,27 +185,162 @@ function findTopLevelFillIndices(tokens: readonly FormatToken[]): number[] {
 	return fillIndices;
 }
 
+/** Boundary markers are invisible in wide output and isolate conditional joins. */
+function isBoundary(token: FormatToken): boolean {
+	return (
+		token.kind === "fill" ||
+		(token.kind === "var" && (token.name === "wrap" || token.name === "wrap_sep"))
+	);
+}
+
+export function renderFormatTokens(
+	tokens: readonly FormatToken[],
+	renderVariable: (name: string) => string,
+): string {
+	return renderTokenSlice(tokens, 0, tokens.length, renderVariable);
+}
+
+/** Join only visible sibling fields; nested groups own independent join scopes. */
+export function renderJoinedTokenFields(
+	tokens: readonly FormatToken[],
+	renderField: (field: readonly FormatToken[]) => string,
+	renderSeparator: () => string,
+): string {
+	const boundary = tokens.findIndex(isBoundary);
+	if (boundary >= 0) {
+		return (
+			renderJoinedTokenFields(tokens.slice(0, boundary), renderField, renderSeparator) +
+			renderJoinedTokenFields(tokens.slice(boundary + 1), renderField, renderSeparator)
+		);
+	}
+	if (!tokens.some((token) => token.kind === "var" && token.name === "join_sep"))
+		return renderField(tokens);
+	const fields: string[] = [];
+	let start = 0;
+	for (let index = 0; index <= tokens.length; index++) {
+		const token = tokens[index];
+		if (index !== tokens.length && !(token?.kind === "var" && token.name === "join_sep")) continue;
+		const rendered = renderField(tokens.slice(start, index));
+		if (stripVTControlCharacters(rendered).trim()) fields.push(rendered);
+		start = index + 1;
+	}
+	return fields.join(fields.length > 1 ? renderSeparator() : "");
+}
+
+export type CompactBoundaryKind = "space" | "separator";
+export type CompactFormatChunk =
+	| {
+			readonly kind: "tokens";
+			readonly tokens: readonly FormatToken[];
+			readonly boundary: CompactBoundaryKind;
+	  }
+	| { readonly kind: "extensions"; readonly boundary: CompactBoundaryKind };
+
+/** Only the first top-level fill divides compact left/right zones. */
+export function compileCompactFormatSplit(tokens: readonly FormatToken[]): {
+	left: CompactFormatChunk[];
+	right: CompactFormatChunk[];
+	alignRight: boolean;
+} {
+	const first = tokens.findIndex((token) => token.kind === "fill");
+	return first < 0
+		? { left: compileCompactFormat(tokens), right: [], alignRight: false }
+		: {
+				left: compileCompactFormat(tokens.slice(0, first)),
+				right: compileCompactFormat(tokens.slice(first + 1)),
+				alignRight: true,
+			};
+}
+
+export function compileCompactFormat(tokens: readonly FormatToken[]): CompactFormatChunk[] {
+	const chunks: CompactFormatChunk[] = [];
+	let current: FormatToken[] = [];
+	let boundary: CompactBoundaryKind = "space";
+	const flush = () => {
+		const normalized = trimBoundaryWhitespace(current);
+		current = [];
+		if (!normalized.length) return;
+		if (
+			normalized.length === 1 &&
+			normalized[0]?.kind === "var" &&
+			normalized[0].name === "extension_statuses"
+		) {
+			chunks.push({ kind: "extensions", boundary });
+		} else chunks.push({ kind: "tokens", tokens: normalized, boundary });
+	};
+	for (const token of tokens) {
+		if (token.kind === "var" && (token.name === "wrap" || token.name === "wrap_sep")) {
+			flush();
+			boundary = token.name === "wrap_sep" ? "separator" : "space";
+		} else current.push(token);
+	}
+	flush();
+	return chunks;
+}
+
+function trimBoundaryWhitespace(tokens: readonly FormatToken[]): FormatToken[] {
+	const result = [...tokens];
+	while (result[0]?.kind === "text") {
+		const value = result[0].value.replace(/^\s+/, "");
+		if (value) {
+			result[0] = { kind: "text", value };
+			break;
+		}
+		result.shift();
+	}
+	while (result.at(-1)?.kind === "text") {
+		const last = result.at(-1);
+		if (last?.kind !== "text") break;
+		const value = last.value.replace(/\s+$/, "");
+		if (value) {
+			result[result.length - 1] = { kind: "text", value };
+			break;
+		}
+		result.pop();
+	}
+	return result;
+}
+
+export function collectFooterFormatReferences(
+	tokens: readonly FormatToken[],
+	aliases: Readonly<Record<string, string>> = {},
+): Set<string> {
+	const references = new Set<string>();
+	const visit = (items: readonly FormatToken[]) => {
+		for (const token of items) {
+			if (token.kind === "group") visit(token.tokens);
+			else if (token.kind === "var" && token.name !== "join_sep") {
+				const alias = aliases[token.name];
+				const canonical = typeof alias === "string" ? alias : token.name;
+				if (!["wrap", "wrap_sep", "extension_statuses"].includes(canonical))
+					references.add(canonical);
+			}
+		}
+	};
+	visit(tokens);
+	return references;
+}
+
 function renderTokenSlice(
 	tokens: readonly FormatToken[],
 	start: number,
 	end: number,
 	renderVariable: (name: string) => string,
 ): string {
-	let result = "";
-	for (let i = start; i < end; i++) {
-		const token = tokens[i];
-		if (!token) continue;
-		result += renderToken(token, renderVariable);
-	}
-	return result;
+	return renderJoinedTokenFields(
+		tokens.slice(start, end),
+		(field) => field.map((token) => renderToken(token, renderVariable)).join(""),
+		() => renderVariable("sep"),
+	);
 }
 
 function renderToken(token: FormatToken, renderVariable: (name: string) => string): string {
 	if (token.kind === "text") return token.value;
-	if (token.kind === "var") return renderVariable(token.name);
+	if (token.kind === "var")
+		return ["wrap", "wrap_sep", "join_sep"].includes(token.name) ? "" : renderVariable(token.name);
 	if (token.kind === "fill") return "";
 	// group
-	const rendered = token.tokens.map((child) => renderToken(child, renderVariable)).join("");
+	const rendered = renderFormatTokens(token.tokens, renderVariable);
 	if (isGroupEmpty(token, renderVariable)) return "";
 	return rendered;
 }
@@ -213,7 +350,7 @@ function renderToken(token: FormatToken, renderVariable: (name: string) => strin
  * alive when every real content var is empty (e.g. `($sep$tokens)` drops if
  * tokens is empty).
  */
-const NON_CONTENT_VARS = new Set(["sep", "separator"]);
+const NON_CONTENT_VARS = new Set(["sep", "separator", "join_sep", "wrap", "wrap_sep"]);
 
 /**
  * A group is empty iff every content var leaf is empty and every nested group
@@ -224,6 +361,11 @@ function isGroupEmpty(
 	group: FormatToken & { kind: "group" },
 	renderVariable: (name: string) => string,
 ): boolean {
+	if (
+		group.tokens.some((token) => token.kind === "var" && token.name === "join_sep") &&
+		!stripVTControlCharacters(renderFormatTokens(group.tokens, renderVariable)).trim()
+	)
+		return true;
 	let sawContentVarOrGroup = false;
 	for (const child of group.tokens) {
 		if (child.kind === "var") {

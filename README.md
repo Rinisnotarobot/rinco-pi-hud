@@ -54,6 +54,9 @@ pi install "$PWD"
 | `/zentui statusline enable\|disable\|toggle` | Show or hide the whole footer |
 | `/zentui row project\|session\|activity\|usage <enable\|disable\|toggle>` | Turn one row on or off |
 | `/zentui format "<template>"` | Replace the four rows with a single-line template |
+| `/zentui compact-format "<template>"` | Opt into a wrapped template below 80 columns; `clear` removes it |
+| `/zentui footer hud\|hidden\|native` | Four-group/template HUD, statuses only, or Pi’s native footer |
+| `/zentui layout\|segments\|extensions` | Open a settings section directly |
 | `/codex-status` | Print Codex subscription usage and rate-limit windows |
 | `/usage-refresh` | Refresh the model usage or balance shown in the footer |
 
@@ -100,7 +103,7 @@ Variables accept `$name` or `${name}`. The [footer reference](docs/footer.md) li
 
 Footer colors follow the active Pi theme by default, including theme switches and automatic light/dark changes. In `/zentui`, **Footer colors → theme** enables this behavior; **terminal** keeps the original Sakura RGB palette. Explicit custom colors (hex, indexed, or `fg:`/`bg:` styles) remain fixed in either mode. Remove those entries from `colors` to restore automatic theme colors.
 
-See [docs/footer.md](docs/footer.md) for the full variable and segment reference.
+Footer features are adapted from Zentui **0.32.0**, without installing its editor, messages, working line, tool display, or OMP adapter. New opt-in features include repository-relative paths, `$join_sep`, compact templates, extension-published values, safe status hyperlinks, PR/CI metadata, and average token rate. Defaults and existing configurations remain unchanged. See [docs/upstream-zentui.md](docs/upstream-zentui.md) for the exact snapshot and integration boundaries, and [docs/footer.md](docs/footer.md) for configuration and examples.
 
 ## Project contents
 

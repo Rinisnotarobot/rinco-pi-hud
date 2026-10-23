@@ -15,6 +15,9 @@ import type { SkillCounts } from "../segments/skill-activity.js";
 import { createTelemetryState, type TelemetryState } from "./telemetry.js";
 
 export type FooterState = GitStatusSummary & {
+	/** Repository root belongs only to repositoryCwd, never another cwd. */
+	repositoryRoot?: string;
+	repositoryCwd?: string;
 	modelLabel: string;
 	providerLabel: string;
 	contextLabel: string;
