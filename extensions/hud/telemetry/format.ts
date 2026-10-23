@@ -304,6 +304,20 @@ export function buildContextLabel(ctx: ExtensionContext): string {
 	return formatContextPercentLabel(usage?.percent, contextWindow);
 }
 
+/** Render just the runtime value for both default rows and custom templates. */
+export function formatRuntimeValue(
+	theme: Pick<Theme, "fg">,
+	runtime: RuntimeInfo | undefined,
+	colorSource: ColorSource,
+	mode: IconMode = "auto",
+): string {
+	if (!runtime) return "";
+	const symbol = resolveRuntimeSymbol(runtime.name, runtime.symbol, mode);
+	const label = runtime.version ? `${symbol} ${runtime.version}` : symbol;
+	const style = colorSource === "theme" ? (runtime.themeStyle ?? runtime.style) : runtime.style;
+	return renderStyleForSource(theme, colorSource, style, label);
+}
+
 export function formatRuntimeSegment(
 	theme: Pick<Theme, "fg">,
 	runtime: RuntimeInfo | undefined,
@@ -312,9 +326,7 @@ export function formatRuntimeSegment(
 	mode: IconMode = "auto",
 ): string {
 	if (!runtime) return "";
-	const symbol = resolveRuntimeSymbol(runtime.name, runtime.symbol, mode);
-	const label = runtime.version ? `${symbol} ${runtime.version}` : symbol;
-	return `${renderStyleForSource(theme, colorSource, prefixStyle, "via")} ${renderStyleForSource(theme, colorSource, runtime.style, label)}`;
+	return `${renderStyleForSource(theme, colorSource, prefixStyle, "via")} ${formatRuntimeValue(theme, runtime, colorSource, mode)}`;
 }
 
 /**

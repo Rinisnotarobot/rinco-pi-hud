@@ -98,6 +98,8 @@ Variables accept `$name` or `${name}`. The [footer reference](docs/footer.md) li
 
 `/zentui` writes to `~/.pi/agent/rinco-pi-hud.json` and applies changes immediately. It covers the separator style, icon mode (`nerd`, `ascii`, or `auto`), footer colors (Pi theme tokens or terminal palette styles), context rendering (text, gauge, or both), the project refresh interval, and third-party extension statuses with their own placement and color mode.
 
+Footer colors follow the active Pi theme by default, including theme switches and automatic light/dark changes. In `/zentui`, **Footer colors → theme** enables this behavior; **terminal** keeps the original Sakura RGB palette. Explicit custom colors (hex, indexed, or `fg:`/`bg:` styles) remain fixed in either mode. Remove those entries from `colors` to restore automatic theme colors.
+
 See [docs/footer.md](docs/footer.md) for the full variable and segment reference.
 
 ## Project contents
@@ -156,7 +158,7 @@ The footer measures the terminal and wraps at segment boundaries, so narrow wind
 <details>
 <summary>Colors look incorrect</summary>
 
-The default RGB palette follows Pi's detected terminal color mode, with 256-color approximation when needed. Check terminal capability settings and try the theme color source in `/zentui`.
+The default palette follows the active Pi theme. If the footer still uses fixed colors, select **Footer colors → theme** in `/zentui` and remove explicit color overrides from `~/.pi/agent/rinco-pi-hud.json`. Third-party statuses set to `original` retain their own colors. Truecolor and 256-color output follow Pi's detected terminal capabilities.
 </details>
 
 <details>

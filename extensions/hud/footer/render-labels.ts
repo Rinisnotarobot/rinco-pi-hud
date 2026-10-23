@@ -13,6 +13,7 @@ import { truncateToWidth } from "@earendil-works/pi-tui";
 import type { ColorSource, PolishedTuiConfig } from "../config/config.js";
 import { formatSkillCounts } from "../segments/skill-activity.js";
 import type { FooterState } from "../state/index.js";
+import type { RuntimeInfo } from "../segments/runtime.js";
 import { getTelemetryStats } from "../state/telemetry.js";
 import { buildSessionDurationLabel, formatCount } from "../telemetry/format.js";
 import { renderStyleForSource, type ThemeLike } from "../ui/style.js";
@@ -25,8 +26,7 @@ export function safeStatusText(value: string | null | undefined, maxLength = 256
 
 export type SanitizedFooterInputs = {
 	safeCwd: string;
-	safeRuntime:
-		{ name: string; symbol: string; style: string; version: string | undefined } | undefined;
+	safeRuntime: RuntimeInfo | undefined;
 	safePackageVersion: { ecosystem: string; version: string } | undefined;
 	safeCommit: { oid: string | null; detached: boolean; tag: string | null } | undefined;
 };

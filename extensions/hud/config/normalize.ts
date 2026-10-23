@@ -34,6 +34,7 @@ import {
 	type PathDisplayConfig,
 	type PolishedTuiConfig,
 	type SeparatorStyle,
+	terminalDefaultColors,
 	type UiFeaturesConfig,
 } from "./schema.js";
 
@@ -374,7 +375,7 @@ export function mergeConfig(parsed: unknown): PolishedTuiConfig {
 		gitBranch,
 		icons: resolveConfiguredIcons(iconMode, iconOverrides),
 		colors: {
-			...defaultConfig.colors,
+			...(colorSources.starship === "terminal" ? terminalDefaultColors : defaultConfig.colors),
 			...colors,
 		},
 		colorSources: { ...colorSources },

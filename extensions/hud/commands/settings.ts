@@ -92,7 +92,7 @@ const colorSettingLabels: Record<ColorSettingId, string> = {
 
 const colorSettingDescriptions: Record<ColorSettingId, string> = {
 	starship:
-		"Choose whether footer runtime/git/context colors use Pi theme tokens or terminal palette styles.",
+		"Follow the active Pi theme automatically (theme), or keep the original Sakura/runtime palette (terminal). Explicit color overrides are preserved.",
 };
 
 const featureSettingLabels: Record<FeatureSettingId, string> = {

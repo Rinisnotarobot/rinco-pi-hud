@@ -98,6 +98,8 @@ Usage 行跟随当前模型的 Provider：
 
 `/zentui` 把配置写入 `~/.pi/agent/rinco-pi-hud.json`，改动立即生效。可配置分隔符样式、图标模式（`nerd`、`ascii`、`auto`）、脚注配色（Pi 主题色或终端调色板样式）、Context 渲染方式（文本、进度条或两者）、项目刷新间隔，以及第三方扩展状态的位置与颜色模式。
 
+脚注默认自动跟随当前 Pi 主题，包括手动切换主题和自动明暗切换。在 `/zentui` 中选择 **Footer colors → theme** 启用跟随，选择 **terminal** 则保留原有 Sakura RGB 配色。显式自定义颜色（十六进制、索引色或 `fg:`/`bg:` 样式）在两种模式下都会保留；删除 `colors` 中的相应配置即可恢复自动配色。
+
 完整的变量与状态段参考见 [docs/footer.md](footer.md)。
 
 ## 仓库结构
@@ -156,7 +158,7 @@ npx tsx assets/readme/source/build-assets.mts /tmp/footer.json
 <details>
 <summary>颜色显示异常</summary>
 
-默认 RGB 配色跟随 Pi 检测到的终端颜色模式，必要时近似为 256 色。请检查终端能力配置，也可以在 `/zentui` 中切换到主题色源。
+默认配色自动跟随当前 Pi 主题。如果脚注仍使用固定颜色，请在 `/zentui` 中选择 **Footer colors → theme**，并删除 `~/.pi/agent/rinco-pi-hud.json` 中的显式颜色覆盖。设为 `original` 的第三方扩展状态会保留自己的颜色。Truecolor 与 256 色输出仍按 Pi 检测到的终端能力选择。
 </details>
 
 <details>

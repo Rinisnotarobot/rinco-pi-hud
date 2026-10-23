@@ -26,10 +26,10 @@ import {
 	formatOsLabel,
 	formatPackageVersionSegment,
 	formatRuntimeSegment,
+	formatRuntimeValue,
 	formatTimeLabel,
 	formatUsernameHostLabel,
 } from "../telemetry/format.js";
-import { resolveRuntimeSymbol } from "../ui/icons.js";
 import type { LiveContextOverride } from "../session/live-context.js";
 import type { FooterState } from "../state/index.js";
 import { renderStyleForSource } from "../ui/style.js";
@@ -180,12 +180,8 @@ export function installFooter(
 							return statusBlock;
 						case "git_state":
 							return gitStateBlock;
-						case "runtime": {
-							if (!safeRuntime) return "";
-							const symbol = resolveRuntimeSymbol(safeRuntime.name, safeRuntime.symbol, iconMode);
-							const label = safeRuntime.version ? `${symbol} ${safeRuntime.version}` : symbol;
-							return renderStyleForSource(theme, colorSource, safeRuntime.style, label);
-						}
+						case "runtime":
+							return formatRuntimeValue(theme, safeRuntime, colorSource, iconMode);
 						case "session_duration":
 							return state.sessionStartEpoch
 								? renderStyleForSource(

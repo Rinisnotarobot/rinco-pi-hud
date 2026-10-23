@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Follow the active Pi theme by default, including live and automatic light/dark theme changes.
+- Use semantic theme colors for built-in HUD segments and RGB/indexed runtime labels.
+- Preserve the original Sakura palette in explicit terminal mode and retain user color overrides.
+
 ## [1.4.0] - 2026-10-17
 
 ### Changed

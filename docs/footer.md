@@ -26,6 +26,24 @@ Control each default-layout row independently:
 
 The command shape is `/zentui row <project|session|activity|usage> <enable|disable|toggle>`. Values persist under `footerRows`; all four default to `true`. Row switches apply only to the default layout and do not alter a custom single-line `footerFormat`.
 
+## Colors and theme switching
+
+By default, `colorSources.starship` is `"theme"`. Built-in footer colors use semantic Pi theme tokens such as `accent`, `muted`, `success`, `warning`, and `error`; runtime labels also use the active theme. Switching themes, including automatic light/dark switching, recolors the footer without reloading the extension. This applies to both the default rows and custom templates.
+
+To enable theme colors in an existing configuration, use **Footer colors → theme** in `/zentui`, or set:
+
+```json
+{
+  "colorSources": {
+    "starship": "theme"
+  }
+}
+```
+
+Select `"terminal"` to retain the original Sakura RGB defaults and Starship runtime colors. Changing the source does not write a palette into your configuration.
+
+Entries you explicitly set under `colors` override the selected defaults. Semantic tokens (for example, `"cwd": "bold accent"`) follow the theme; hex colors, indexed colors, and explicit `fg:`/`bg:` styles remain fixed. Remove an override to restore the default for that segment. Third-party extension statuses in `original` color mode retain their own ANSI colors; use `zentui` color mode to recolor them with the HUD.
+
 ## Built-in status segments
 
 | Key | Default | Group | Description |

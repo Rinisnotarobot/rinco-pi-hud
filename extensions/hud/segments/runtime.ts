@@ -7,9 +7,11 @@ export type RuntimeMetadata = {
 	name: string;
 	symbol: string;
 	style: string;
+	/** Semantic alternative for built-in RGB/indexed terminal styles. */
+	themeStyle?: string;
 };
 
-export type RuntimeInfo = Pick<RuntimeMetadata, "name" | "symbol" | "style"> & {
+export type RuntimeInfo = RuntimeMetadata & {
 	version?: string;
 };
 
@@ -114,10 +116,11 @@ function matchesDetection(
 const sortedRuntimes = runtimeDefinitions;
 
 export const runtimeMetadata: RuntimeMetadata[] = runtimeDefinitions.map(
-	({ name, symbol, style }) => ({
+	({ name, symbol, style, themeStyle }) => ({
 		name,
 		symbol,
 		style,
+		themeStyle,
 	}),
 );
 
@@ -170,6 +173,7 @@ export async function readRuntimeInfo(cwd: string): Promise<RuntimeReadResult> {
 					name: runtime.name,
 					symbol: runtime.symbol,
 					style: runtime.style,
+					themeStyle: runtime.themeStyle,
 					version: await runtime.version(cwd),
 				},
 			};

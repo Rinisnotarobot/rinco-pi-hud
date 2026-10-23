@@ -240,6 +240,7 @@ const runtimes: RuntimeDef[] = [
 		name: "php",
 		symbol: "",
 		style: "147 bold",
+		themeStyle: "bold syntaxVariable",
 		priority: PRIORITY_COMMON,
 		detect: { files: ["composer.json"] },
 		version: async () =>
@@ -265,6 +266,7 @@ const runtimes: RuntimeDef[] = [
 		name: "cpp",
 		symbol: "",
 		style: "bold 149",
+		themeStyle: "bold success",
 		priority: PRIORITY_DEFAULT,
 		detect: { extensions: ["cpp", "cc", "cxx", "c++", "hpp", "hh", "hxx", "h++", "tcc"] },
 		version: versionFromCommands([
@@ -277,6 +279,7 @@ const runtimes: RuntimeDef[] = [
 		name: "c",
 		symbol: "",
 		style: "bold 149",
+		themeStyle: "bold success",
 		priority: PRIORITY_DEFAULT,
 		detect: { extensions: ["c", "h"] },
 		version: versionFromCommands([
@@ -414,6 +417,7 @@ const runtimes: RuntimeDef[] = [
 		name: "gleam",
 		symbol: "",
 		style: "bold #FFAFF3",
+		themeStyle: "bold syntaxKeyword",
 		priority: PRIORITY_DEFAULT,
 		detect: { extensions: ["gleam"], files: ["gleam.toml"] },
 		version: versionFromCommands([{ command: "gleam", args: ["--version"] }]),
@@ -438,6 +442,7 @@ const runtimes: RuntimeDef[] = [
 		name: "haxe",
 		symbol: "",
 		style: "bold fg:202",
+		themeStyle: "bold syntaxType",
 		priority: PRIORITY_DEFAULT,
 		detect: {
 			extensions: ["hx", "hxml"],
@@ -482,6 +487,7 @@ const runtimes: RuntimeDef[] = [
 		name: "mojo",
 		symbol: "󰈸",
 		style: "bold 208",
+		themeStyle: "bold syntaxType",
 		priority: PRIORITY_DEFAULT,
 		detect: { extensions: ["mojo", "🔥"] },
 		version: versionFromCommands([{ command: "mojo", args: ["--version"] }]),
@@ -534,6 +540,7 @@ const runtimes: RuntimeDef[] = [
 		name: "perl",
 		symbol: "",
 		style: "bold 149",
+		themeStyle: "bold success",
 		priority: PRIORITY_DEFAULT,
 		detect: {
 			extensions: ["pl", "pm", "pod"],
@@ -564,6 +571,7 @@ const runtimes: RuntimeDef[] = [
 		name: "pulumi",
 		symbol: "",
 		style: "bold 5",
+		themeStyle: "bold syntaxKeyword",
 		priority: PRIORITY_DEFAULT,
 		detect: { files: ["Pulumi.yaml", "Pulumi.yml"] },
 		version: versionFromCommands([{ command: "pulumi", args: ["version"] }]),
@@ -580,6 +588,7 @@ const runtimes: RuntimeDef[] = [
 		name: "raku",
 		symbol: "󱖊",
 		style: "bold 149",
+		themeStyle: "bold success",
 		priority: PRIORITY_DEFAULT,
 		detect: { extensions: ["p6", "pm6", "pod6", "raku", "rakumod"], files: ["META6.json"] },
 		version: versionFromCommands([{ command: "raku", args: ["--version"] }]),
@@ -636,6 +645,7 @@ const runtimes: RuntimeDef[] = [
 		name: "swift",
 		symbol: "",
 		style: "bold 202",
+		themeStyle: "bold syntaxType",
 		priority: PRIORITY_DEFAULT,
 		detect: { extensions: ["swift"], files: ["Package.swift"] },
 		version: versionFromCommands([
@@ -646,6 +656,7 @@ const runtimes: RuntimeDef[] = [
 		name: "terraform",
 		symbol: "",
 		style: "bold 105",
+		themeStyle: "bold syntaxVariable",
 		priority: PRIORITY_DEFAULT,
 		detect: { extensions: ["tf", "tfplan", "tfstate"], folders: [".terraform"] },
 		version: versionFromCommands([
@@ -657,6 +668,7 @@ const runtimes: RuntimeDef[] = [
 		name: "typst",
 		symbol: "",
 		style: "bold #0093A7",
+		themeStyle: "bold syntaxFunction",
 		priority: PRIORITY_DEFAULT,
 		detect: { extensions: ["typ"], files: ["template.typ"] },
 		version: versionFromCommands([{ command: "typst", args: ["--version"] }]),
