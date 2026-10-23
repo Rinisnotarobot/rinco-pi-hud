@@ -4,8 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-10-23
+
 ### Changed
 
+- Move the current-time segment from Usage to Session, immediately after duration, and tie its refresh timer to Session visibility.
 - Remove Activity's Agent run/idle indicators, their segment controls, and the `$active_agents` / `$agents` template variables. Existing Agent status configuration keys are ignored.
 - Count MCP servers from Pi's public runtime tool registry instead of reading `mcp.json`. Count namespaces with non-hidden tools, including dynamic registrations and codemode/deferred tools; this is not a connection-health count.
 - Rename the HUD settings command from `/zentui` to `/hud`, without a legacy alias, so the original Zentui can use `/zentui` independently. Existing HUD configuration and publisher protocols are unchanged.
