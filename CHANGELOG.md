@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-23
+
 ### Added
 
 - Adapt Footer/HUD features from pi-zentui 0.32.0 (upstream snapshot
